@@ -35,7 +35,7 @@ public class PersonServiceTest {
 	@Test
 	void canAddPerson() {
 		// given
-		Person person = new Person(null, "Ali", "Moussa", "ali@mail.com", "Niger", "ENSA");
+		Person person = new Person(null, "Ali", "Moussa", "ali@mail.com", "Niger", "ENSA", null);
 
 		// when
 		int result = underTest.addPerson(person);
@@ -52,7 +52,7 @@ public class PersonServiceTest {
 	@Test
 	void shouldNotAddPersonIfEmailExist() {
 		// given
-		Person person = new Person(null, "Ali", "Moussa", "ali@gmail.com", "Niger", "ENSA");
+		Person person = new Person(null, "Ali", "Moussa", "ali@gmail.com", "Niger", "ENSA", null);
 
 		// when
 		when(personRepository.existsByEmail(person.getEmail())).thenReturn(true);
@@ -66,7 +66,7 @@ public class PersonServiceTest {
 	void shouldReturnPersonIfEmailExists() {
 		// given
 		String email = "ali@gmail.com";
-		Person person = new Person(null, "Ali", "Moussa", email, "Niger", "ENSA");
+		Person person = new Person(null, "Ali", "Moussa", email, "Niger", "ENSA", null);
 
 		// when
 		when(personRepository.findByEmail(email)).thenReturn(Optional.of(person));
@@ -96,8 +96,8 @@ public class PersonServiceTest {
 	@Test
 	void shouldReturnAllPersonIfExist() {
 		// given 
-		Person person = new Person(null, "Ali", "Moussa", "ali@gmail.com", "Morocco", "ENSAO");
-		Person person1 = new Person(null, "Abdou", "Moussa", "abdou@gmail.com", "Morocco", "ENSAO");
+		Person person = new Person(null, "Ali", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+		Person person1 = new Person(null, "Abdou", "Moussa", "abdou@gmail.com", "Morocco", "ENSAO", null);
 		List<Person> personList = Arrays.asList(person, person1); 
 		
 		// when 

@@ -20,7 +20,7 @@ public class PersonRepositoryTest {
 	@Test
 	void canAddPerson() {
 		// given
-		Person person = new Person(null, "Ali", "Moussa", "ali@gmail.com", "Morocco", "ENSAO"); 
+		Person person = new Person(null, "Ali", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null); 
 		
 		// when 
 		Person expectedPerson = underTest.save(person); 
@@ -33,7 +33,7 @@ public class PersonRepositoryTest {
 	void isShouldCheckIfPersonEmailExits() {
 		// given
 		String email = "ali@gmail.com";
-		Person person = new Person(null, "Ali", "Moussa", email, "Morocco", "ENSAO");
+		Person person = new Person(null ,"Ali", "Moussa", email, "Morocco", "ENSAO", null);
 		underTest.save(person);
 		
 		// when 
@@ -47,7 +47,7 @@ public class PersonRepositoryTest {
 	void shouldReturnPersonIfEmailExits() {
 		// given
 		String email = "ali@gmail.com";
-		Person person = new Person(null, "Ali", "Moussa", email, "Morocco", "ENSAO");
+		Person person = new Person(null, "Ali", "Moussa", email, "Morocco", "ENSAO", null);
 		underTest.save(person);
 		
 		// when 
@@ -72,12 +72,12 @@ public class PersonRepositoryTest {
 	
 	@Test
 	void shouldFindAllPersons() {
-		//given 
-		Person person = new Person(null, "Ali", "Moussa", "ali@gmail.com", "Morocco", "ENSAO");
-		Person person1 = new Person(null, "Abdou", "Moussa", "abdou@gmail.com", "Morocco", "ENSAO");
+		//given
+		Person person = new Person(null, "Ali", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+		Person person1 = new Person(null, "Abdou", "Moussa", "abdou@gmail.com", "Morocco", "ENSAO", null);
 		underTest.save(person);
 		underTest.save(person1); 
-		
+	
 		//when 
 		List<Person> personList = underTest.findAll(); 
 		
@@ -101,7 +101,7 @@ public class PersonRepositoryTest {
 	void shouldDeletePersonByEmail() {
 		// given
 		String email = "ali@gmail.com";
-		Person person = new Person(null, "Ali", "Moussa", email, "Morocco", "ENSAO");
+		Person person = new Person(null, "Ali", "Moussa", email, "Morocco", "ENSAO", null);
 		underTest.save(person);
 		
 		// when

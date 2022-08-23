@@ -7,32 +7,27 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 @Entity
 @Data
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @ToString
 public class Person {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@NonNull
 	private Long id; 
-	@NonNull
 	private String firstname;
-	@NonNull
 	private String lastname; 
-	@NonNull
 	private String email;
-	@NonNull
 	private String country;
-	@NonNull
 	private String organization;  
 	@ManyToOne
-	@JoinColumn(name = "submission_id", nullable = false)
+	@JoinColumn(name = "submission_id")
 	private Submission submission;
 }
