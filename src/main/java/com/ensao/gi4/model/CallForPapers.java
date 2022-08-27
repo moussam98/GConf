@@ -1,14 +1,12 @@
 package com.ensao.gi4.model;
 
-import java.sql.Date;
-import java.util.List;
+import java.time.LocalDate;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
 import lombok.Data;
@@ -21,11 +19,13 @@ public class CallForPapers {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id; 
 	@OneToOne
-	@JoinColumn(name = "conference_id", nullable = false)
+	@JoinColumn(name = "conference_id", referencedColumnName = "id")
 	private Conference conference; 
-	private Date startDate; 
-	private Date endDate; 
-	@OneToMany(mappedBy = "callForPapers")
-	private List<Topic> topicList; 
+	private LocalDate startDate; 
+	private LocalDate endDate; 
+	private String topic1;
+	private String topic2;
+	private String topic3;
+	private String topic4;
 	private String guidelines; 
 }
