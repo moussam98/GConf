@@ -15,13 +15,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 
 @Entity
 @Data
 @AllArgsConstructor
 @RequiredArgsConstructor
-@ToString
 public class Conference {
 
 	@Id
