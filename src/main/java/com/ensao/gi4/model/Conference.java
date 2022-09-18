@@ -11,48 +11,56 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
 @AllArgsConstructor
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class Conference {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	@NonNull
 	private String name;
-	@NonNull
 	private String acronym;
-	@NonNull
 	private String venue;
-	@NonNull
 	private String city;
-	@NonNull
 	private String country;
-	@NonNull
 	private LocalDate firstDay;
-	@NonNull
 	private LocalDate lastDay;
-	@NonNull
 	private String primaryArea;
-	@NonNull
 	private String secondaryArea;
-	@NonNull
 	private String organizer;
 	private String phoneNumber;
 	private String otherInfo;
 	@OneToMany(mappedBy = "conference")
-	private List<Submission> submission;
+	@JsonManagedReference
+	private List<Submission> submissions;
 	@OneToOne
-	@JoinColumn(name = "person_id")
-	private Person person;
+	@JoinColumn(name = "user_id")
+	private User user;
 	@OneToOne(mappedBy = "conference")
+	@JsonBackReference
 	private CallForPapers callForPapers;
+
+	public Conference(String name, String acronym, String venue, String city, String country, LocalDate firstDay,
+			LocalDate lastDay, String primaryArea, String secondaryArea, String organizer) {
+		this.name = name;
+		this.acronym = acronym;
+		this.venue = venue;
+		this.city = city;
+		this.country = country;
+		this.firstDay = firstDay;
+		this.lastDay = lastDay;
+		this.primaryArea = primaryArea;
+		this.secondaryArea = secondaryArea;
+		this.organizer = organizer;
+	}
 
 }

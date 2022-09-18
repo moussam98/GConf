@@ -26,8 +26,7 @@ public class SubmissionRepositoryTest {
 
 	@Autowired
 	private SubmissionRepository underTest;
-	@Autowired
-	private PersonRepository personRepository;
+
 	@Autowired
 	private ConferenceRepository conferenceRepository;
 	@Autowired
@@ -45,15 +44,15 @@ public class SubmissionRepositoryTest {
 		conference = new Conference("International Confernce", "IC", "UMP", "Oujda", "Morrocco", LocalDate.now(),
 				LocalDate.of(2022, 8, 30), "Computer Science", "Artificial Intelligence", "organizeName");
 
-		person1 = new Person(null, "Ali1", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
-		person2 = new Person(null, "Ali2", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
-		person3 = new Person(null, "Ali3", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
-		person4 = new Person(null, "Ali4", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+//		person1 = new Person(null, "Ali1", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+//		person2 = new Person(null, "Ali2", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+//		person3 = new Person(null, "Ali3", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+//		person4 = new Person(null, "Ali4", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
 
-		keyword1 = new Keyword(null, "Artificial Intelligence", null);
-		keyword2 = new Keyword(null, "Internet Of Things", null);
-		keyword3 = new Keyword(null, "Block chain", null);
-		keyword4 = new Keyword(null, "Technologie", null);
+		keyword1 = new Keyword(null, "Artificial Intelligence");
+		keyword2 = new Keyword(null, "Internet Of Things");
+		keyword3 = new Keyword(null, "Block chain");
+		keyword4 = new Keyword(null, "Technologie");
 
 		document = new Document();
 		document = new Document();
@@ -70,10 +69,10 @@ public class SubmissionRepositoryTest {
 		// when
 		conference = conferenceRepository.save(conference);
 
-		personRepository.save(person1);
-		personRepository.save(person2);
-		personRepository.save(person3);
-		personRepository.save(person4);
+//		personRepository.save(person1);
+//		personRepository.save(person2);
+//		personRepository.save(person3);
+//		personRepository.save(person4);
 
 		keywordRepository.save(keyword1);
 		keywordRepository.save(keyword2);
@@ -95,7 +94,7 @@ public class SubmissionRepositoryTest {
 		authors.add(person4);
 
 		submission.setConference(conference);
-		submission.setAuthors(authors);
+		//submission.setAuthors(authors);
 		submission.setKeywords(keywords);
 		submission.setDocument(document);
 
@@ -110,10 +109,10 @@ public class SubmissionRepositoryTest {
 		// given
 		conference = conferenceRepository.save(conference);
 
-		personRepository.save(person1);
-		personRepository.save(person2);
-		personRepository.save(person3);
-		personRepository.save(person4);
+//		personRepository.save(person1);
+//		personRepository.save(person2);
+//		personRepository.save(person3);
+//		personRepository.save(person4);
 
 		keywordRepository.save(keyword1);
 		keywordRepository.save(keyword2);
@@ -135,7 +134,7 @@ public class SubmissionRepositoryTest {
 		authors.add(person4);
 
 		submission.setConference(conference);
-		submission.setAuthors(authors);
+		//submission.setAuthors(authors);
 		submission.setKeywords(keywords);
 		submission.setDocument(document);
 
@@ -156,10 +155,10 @@ public class SubmissionRepositoryTest {
 		// given
 		conference = conferenceRepository.save(conference);
 
-		personRepository.save(person1);
-		personRepository.save(person2);
-		personRepository.save(person3);
-		personRepository.save(person4);
+//		personRepository.save(person1);
+//		personRepository.save(person2);
+//		personRepository.save(person3);
+//		personRepository.save(person4);
 
 		keywordRepository.save(keyword1);
 		keywordRepository.save(keyword2);
@@ -181,7 +180,7 @@ public class SubmissionRepositoryTest {
 		authors.add(person4);
 
 		submission.setConference(conference);
-		submission.setAuthors(authors);
+		//submission.setAuthors(authors);
 		submission.setKeywords(keywords);
 		submission.setDocument(document);
 

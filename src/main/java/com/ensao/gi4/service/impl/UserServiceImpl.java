@@ -1,0 +1,102 @@
+package com.ensao.gi4.service.impl;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ensao.gi4.dto.UserDto;
+import com.ensao.gi4.model.Role;
+import com.ensao.gi4.model.User;
+import com.ensao.gi4.repository.UserRepository;
+import com.ensao.gi4.service.api.UserService;
+
+import lombok.AllArgsConstructor;
+
+@Service
+@Transactional
+@AllArgsConstructor
+public class UserServiceImpl implements UserService {
+
+	private final UserRepository userRepository;
+	private final BCryptPasswordEncoder passwordEncoder;
+
+	@Override
+	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+
+		Optional<User> userOptional = userRepository.findByEmail(email);
+
+		if (userOptional.isPresent()) {
+			User user = userOptional.get();
+			return new org.springframework.security.core.userdetails.User(user.getEmail(),
+					user.getPassword(), user.getAuthorities());
+		} else {
+			throw new UsernameNotFoundException(String.format("User with email %s not found", email));
+		}
+
+	}
+
+	@Override
+	public Long SignUp(User user) {
+		boolean userExists = userRepository.findByEmail(user.getEmail()).isPresent();
+
+		if (userExists) {
+			throw new IllegalStateException("Email already taken");
+		}
+
+		String encodedPassword = passwordEncoder.encode(user.getPassword());
+		user.setPassword(encodedPassword);
+		user.setRole(Role.ADMIN);
+
+		return userRepository.save(user).getId();
+	}
+
+	@Override
+	public Optional<User> findById(Long id) {
+		return userRepository.findById(id);
+	}
+
+	@Override
+	public Optional<List<User>> findAll() {
+		return Optional.of(userRepository.findAll()); 
+	}
+
+	@Override
+	public Optional<User> findByEmail(String email) {
+		return userRepository.findByEmail(email);
+	}
+
+	@Override
+	public Integer deleteByEmail(String email) {
+		return userRepository.deleteByEmail(email);
+	}
+
+	@Override
+	public Boolean update(UserDto userDto, String email) {
+		
+		Optional<User> userOptional = userRepository.findByEmail(email);
+		
+		if (userOptional.isPresent()) {
+			
+			User user = userOptional.get();
+			user.setFirstname(userDto.getFirstname());
+			user.setLastname(userDto.getLastname());
+			user.setEmail(userDto.getEmail());
+			
+			if (Optional.of(userDto.getPassword()).isPresent()) {
+				String encodedPassword = passwordEncoder.encode(userDto.getPassword());
+				user.setPassword(encodedPassword);
+			}
+			
+			return true; 
+		}
+		
+		return false;
+	}
+
+
+}

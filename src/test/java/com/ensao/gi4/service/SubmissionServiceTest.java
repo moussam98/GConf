@@ -12,10 +12,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.transaction.Transactional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
@@ -25,16 +28,27 @@ import com.ensao.gi4.model.Document;
 import com.ensao.gi4.model.Keyword;
 import com.ensao.gi4.model.Person;
 import com.ensao.gi4.model.Submission;
+import com.ensao.gi4.repository.ConferenceRepository;
+import com.ensao.gi4.repository.DocumentRepository;
+import com.ensao.gi4.repository.KeywordRepository;
 import com.ensao.gi4.repository.SubmissionRepository;
-import com.ensao.gi4.service.api.SubmissionService;
 import com.ensao.gi4.service.impl.SubmissionServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
+@Transactional
 public class SubmissionServiceTest {
 
 	@Mock
 	private SubmissionRepository submissionRepository;
-	private SubmissionService underTest;
+	@Mock
+	private ConferenceRepository conferenceRepository;
+	@Mock
+	private KeywordRepository keywordRepository;
+	@Mock
+	private DocumentRepository documentRepository; 
+	
+	@InjectMocks
+	private SubmissionServiceImpl underTest;
 	private Conference conference;
 	private Person person1, person2, person3, person4;
 	private Keyword keyword1, keyword2, keyword3, keyword4;
@@ -45,19 +59,19 @@ public class SubmissionServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		underTest = new SubmissionServiceImpl(submissionRepository);
 		conference = new Conference("International Confernce", "IC", "UMP", "Oujda", "Morrocco", LocalDate.now(),
 				LocalDate.of(2022, 8, 30), "Computer Science", "Artificial Intelligence", "organizeName");
+		conference.setId(1l);
 
-		person1 = new Person(null, "Ali1", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
-		person2 = new Person(null, "Ali2", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
-		person3 = new Person(null, "Ali3", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
-		person4 = new Person(null, "Ali4", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+//		person1 = new Person(null, "Ali1", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+//		person2 = new Person(null, "Ali2", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+//		person3 = new Person(null, "Ali3", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+//		person4 = new Person(null, "Ali4", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
 
-		keyword1 = new Keyword(null, "Artificial Intelligence", null);
-		keyword2 = new Keyword(null, "Internet Of Things", null);
-		keyword3 = new Keyword(null, "Block chain", null);
-		keyword4 = new Keyword(null, "Technologie", null);
+		keyword1 = new Keyword(null, "Artificial Intelligence");
+		keyword2 = new Keyword(null, "Internet Of Things");
+		keyword3 = new Keyword(null, "Block chain");
+		keyword4 = new Keyword(null, "Technologie");
 
 		document = new Document();
 		document = new Document();
@@ -80,7 +94,7 @@ public class SubmissionServiceTest {
 		submission = new Submission(null, "Subject", "Description of subject", null, null, null, null);
 
 		submission.setConference(conference);
-		submission.setAuthors(authors);
+		//submission.setAuthors(authors);
 		submission.setKeywords(keywords);
 		submission.setDocument(document);
 		submission.setId(1l);
@@ -88,16 +102,43 @@ public class SubmissionServiceTest {
 
 	@Test
 	void shouldAddSubmission() {
+		// given 
+		List<Person> authors = Arrays.asList(person1, person2, person3, person4); 
+	
 		// when
+		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.of(conference));
 		when(submissionRepository.save(submission)).thenReturn(submission);
-		int actualResult = underTest.add(submission);
+		//Long actualResult = underTest.add(submission, conference.getId());
 		ArgumentCaptor<Submission> submissionArgumentCaptor = ArgumentCaptor.forClass(Submission.class);
+		ArgumentCaptor<Long> conferenceIdArgumentCaptor = ArgumentCaptor.forClass(Long.class);
+		ArgumentCaptor<Person> personArgumentCaptor = ArgumentCaptor.forClass(Person.class);  
+		ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class); 
 
 		// then
-		assertThat(actualResult).isEqualTo(1);
+		//assertThat(actualResult).isEqualTo(submission.getId());
+		
 		verify(submissionRepository).save(submissionArgumentCaptor.capture());
 		assertThat(submissionArgumentCaptor.getValue()).isEqualTo(submission);
+		
+		verify(conferenceRepository).findById(conferenceIdArgumentCaptor.capture());
+		assertThat(conferenceIdArgumentCaptor.getValue()).isEqualTo(conference.getId());
+		
+		//verify(personRepository, times(authors.size())).save(personArgumentCaptor.capture()); 
+		assertThat(authors.contains(personArgumentCaptor.getValue())).isTrue(); 
+		
+		verify(documentRepository).save(documentArgumentCaptor.capture()); 
+		assertThat(documentArgumentCaptor.getValue()).isEqualTo(document);
 
+	}
+	
+	@Test
+	void shouldNotAddSubmission() {
+		// when
+		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.empty());
+		//Long actualResult = underTest.add(submission, conference.getId());
+		
+		// then
+		//assertThat(actualResult).isEqualTo(-1);
 	}
 
 	@Test

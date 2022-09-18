@@ -9,11 +9,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -30,19 +30,15 @@ public class Submission {
 	private Long id;
 	private String title; 
 	private String description; 
-	@ManyToMany
-	@JoinTable(
-			name = "Submission_KeywordSubmission",
-			joinColumns = { @JoinColumn(name = "submission_id") },
-			inverseJoinColumns = { @JoinColumn(name = "keywordSubmission_id") }
-			)
+	@OneToMany
 	private Set<Keyword> keywords = new HashSet<>(); 
 	@OneToOne
 	private Document document;
 	@ManyToOne
 	@JoinColumn(name = "conference_id", nullable = false)
+	@JsonBackReference
 	private Conference conference;
 	@OneToMany(mappedBy = "submission")
-	private List<Person> authors; 
+	private List<Author> authors; 
 
 }
