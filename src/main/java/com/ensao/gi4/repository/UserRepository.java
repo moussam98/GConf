@@ -11,5 +11,4 @@ import com.ensao.gi4.model.User;
 public interface UserRepository extends JpaRepository<User, Long> {
 	Optional<User> findByEmail(String email);
 	Integer deleteByEmail(String email);
-
 }

@@ -24,50 +24,40 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
-import com.fasterxml.jackson.core.exc.StreamWriteException;
-import com.fasterxml.jackson.databind.DatabindException;
+import com.ensao.gi4.security.config.JwtConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@AllArgsConstructor
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
-	private static final String SECRET = "fj32Jfv02Mq33g0f8ioDkw";
+	private final JwtConfig jwtConfig;
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 
-		if (request.getServletPath().equals("/api/v1/login")) {
+		String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+
+		if (Strings.isNullOrEmpty(authorizationHeader) || !authorizationHeader.startsWith(jwtConfig.getTokenPrefix())) {
 			filterChain.doFilter(request, response);
-		} else {
-			String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-
-			if (authorizationHeader != null && authorizationHeader.startsWith("Bearer_")) {
-				handleAuthorizationHeader(request, response, filterChain, authorizationHeader);
-			} else {
-				filterChain.doFilter(request, response);
-			}
+			return;
 		}
-	}
 
-	private void handleAuthorizationHeader(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain,
-			String authorizationHeader) throws IOException, StreamWriteException, DatabindException {
 		try {
-			String token = authorizationHeader.substring("Bearer_".length());
-			Algorithm algorithm = Algorithm.HMAC256(SECRET);
-			JWTVerifier verifier = JWT.require(algorithm).build();
-			DecodedJWT decodedJWT = verifier.verify(token);
+
+			DecodedJWT decodedJWT = getDecodedJWT(authorizationHeader);
 			String username = decodedJWT.getSubject();
-			String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
-			Collection<GrantedAuthority> authorities = new ArrayList<>();
-			Arrays.stream(roles).forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
+			Collection<GrantedAuthority> authorities = getAuthorities(decodedJWT);
 			UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
 					null, authorities);
-
 			SecurityContextHolder.getContext().setAuthentication(authenticationToken);
 			filterChain.doFilter(request, response);
+
 		} catch (Exception exception) {
 
 			log.error("Error logging in : {} ", exception.getMessage());
@@ -76,6 +66,22 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 			response.setStatus(HttpStatus.FORBIDDEN.value());
 			new ObjectMapper().writeValue(response.getOutputStream(), error);
 		}
+
+	}
+
+	private Collection<GrantedAuthority> getAuthorities(DecodedJWT decodedJWT) {
+		String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
+		Collection<GrantedAuthority> authorities = new ArrayList<>();
+		Arrays.stream(roles).forEach(role -> authorities.add(new SimpleGrantedAuthority(role)));
+		return authorities;
+	}
+
+	private DecodedJWT getDecodedJWT(String authorizationHeader) {
+		String token = authorizationHeader.replace(jwtConfig.getTokenPrefix(), "");
+		Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecretKey());
+		JWTVerifier verifier = JWT.require(algorithm).build();
+		DecodedJWT decodedJWT = verifier.verify(token);
+		return decodedJWT;
 	}
 
 }

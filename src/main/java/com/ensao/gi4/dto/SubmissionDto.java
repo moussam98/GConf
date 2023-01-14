@@ -9,10 +9,10 @@ import lombok.Getter;
 @Getter
 public class SubmissionDto{
 	
-	private final String title; 
-	private final String description;
-	private final MultipartFile document;
-	private final String keywords;
-	private final String authors; 
+	private String title; 
+	private String description;
+	private MultipartFile document;
+	private String keywords;
+	private String authors; 
 
 }

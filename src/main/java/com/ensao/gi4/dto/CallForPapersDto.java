@@ -1,5 +1,9 @@
 package com.ensao.gi4.dto;
 
+import java.util.Set;
+
+import com.ensao.gi4.model.Topic;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -7,8 +11,8 @@ import lombok.Getter;
 @Getter
 public class CallForPapersDto {
 
-	private final String startDate; 
-	private final String endDate;
-	private final String topics; 
-	private final String guidelines; 
+	private String startDate; 
+	private String endDate;
+	private Set<Topic> topics; 
+	private String guidelines; 
 }

@@ -9,9 +9,10 @@ import com.ensao.gi4.model.Submission;
 
 public interface SubmissionService {
 	
-	Long add(SubmissionDto submissionDto, Long conferenceId) throws IOException; 
+	Long add(SubmissionDto submissionDto, Long userId) throws IOException; 
 	Optional<Submission> findById(Long id); 
 	Optional<List<Submission>> findAllSubmission(); 
-	boolean existsById(Long id);
-
+	Boolean existsById(Long id);
+	Boolean evaluateSubmission(Long submissionId, Boolean isValidate); 
+	Boolean deleteById(Long id); 
 }

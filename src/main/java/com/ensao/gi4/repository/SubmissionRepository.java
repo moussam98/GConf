@@ -13,8 +13,10 @@ import com.ensao.gi4.model.Submission;
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
-	@Query("SELECT sub, doc.id, doc.filename, doc.fileType FROM Submission sub LEFT JOIN sub.document doc WHERE sub.id = :id")
+	@Query("SELECT sub, doc.id, doc.filename, doc.fileType "
+			+ "FROM Submission sub LEFT JOIN sub.document doc WHERE sub.id = :id")
 	List<Tuple> findSubmissionById(Long id);
+
 	@Query("SELECT sub, doc.id, doc.filename, doc.fileType FROM Submission sub LEFT JOIN sub.document doc")
 	List<Tuple> findAllSubmission();
 }

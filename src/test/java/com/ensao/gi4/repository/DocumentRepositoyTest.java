@@ -17,37 +17,37 @@ public class DocumentRepositoyTest {
 
 	@Autowired
 	private DocumentRepository underTest;
-	private Document document; 
-	
+	private Document document;
+
 	@BeforeEach
 	void setUp() {
-		document = new Document(); 
+		document = new Document();
 		document.setFilename("Test.pdf");
 		document.setFileType(MediaType.APPLICATION_PDF_VALUE);
 		document.setData("Hello world".getBytes());
 	}
-	
+
 	@Test
-	void shouldAndDocument() {
-		// when 
-		Document expectedDocument = underTest.save(document); 
-		
-		// then 
-		assertThat(expectedDocument).isEqualTo(document); 
+	void shouldAddDocument() {
+		// when
+		Document expectedDocument = underTest.save(document);
+
+		// then
+		assertThat(expectedDocument).isEqualTo(document);
 	}
-	
+
 	@Test
 	void shouldFindDocumentById() {
-		// given 
-		Document savedDocument = underTest.save(document);
-		Long documentId  = savedDocument.getId(); 
-		
+		// given
+		underTest.save(document);
+		Long documentId = document.getId();
+
 		// when
-		Optional<Document> foundDocument = underTest.findById(documentId);
-		
-		// then 
-		assertThat(foundDocument).isNotEmpty();
-		assertThat(foundDocument).hasValue(savedDocument); 
-		
+		Optional<Document> optionalDocument = underTest.findById(documentId);
+
+		// then
+		assertThat(optionalDocument).isNotEmpty();
+		assertThat(optionalDocument).hasValue(document);
+
 	}
 }

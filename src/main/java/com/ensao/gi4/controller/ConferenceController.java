@@ -2,7 +2,6 @@ package com.ensao.gi4.controller;
 
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,31 +14,35 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ensao.gi4.dto.ConferenceDto;
+import com.ensao.gi4.dto.ConferenceFirstInfoDto;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.service.api.ConferenceService;
 
+import lombok.AllArgsConstructor;
+
 @RestController
 @RequestMapping("/api/v1/conference")
+@AllArgsConstructor
 public class ConferenceController {
 
-	@Autowired
-	private ConferenceService conferenceService;
+	private final ConferenceService conferenceService;
  
 	@PostMapping("/add/{userId}")
-	public ResponseEntity<String> addConference(@RequestBody ConferenceDto conferenceDto, @PathVariable("userId") Long userId) {
+	public ResponseEntity<String> addConference(@RequestBody ConferenceFirstInfoDto conferenceFirstInfoDto, @PathVariable Long userId) {
 		
-		Long result = conferenceService.add(conferenceDto, userId);
+		Long result = conferenceService.add(conferenceFirstInfoDto, userId);
 
 		if (result == -1) {
 			return new ResponseEntity<String>("Unable to add this conference because its name and acronym already exist" ,HttpStatus.BAD_REQUEST);
 		} else {
 			return new ResponseEntity<String>(result.toString(), HttpStatus.OK);
 		}
+		
 	}
 	
 	@GetMapping("/{conferenceId}")
-	public ResponseEntity<Conference> getConferenceById(@PathVariable("conferenceId") Long id){
-		Optional<Conference> conferenceOptional = conferenceService.findById(id); 
+	public ResponseEntity<Conference> getConferenceById(@PathVariable Long conferenceId){
+		Optional<Conference> conferenceOptional = conferenceService.findById(conferenceId); 
 		
 		if (conferenceOptional.isPresent()) {
 			return ResponseEntity.ok().body(conferenceOptional.get()); 
@@ -73,6 +76,18 @@ public class ConferenceController {
 		}
 	}
 	
+	@GetMapping("/user/{userId}")
+	public ResponseEntity<Conference> getConferenceByUser(@PathVariable Long userId) {
+		
+		Optional<Conference> conferenceOptional = conferenceService.findByUser(userId); 
+		if (conferenceOptional.isPresent()) {
+			return new ResponseEntity<Conference>(conferenceOptional.get(), HttpStatus.OK); 
+		}
+		else {
+			return new ResponseEntity<Conference>(HttpStatus.NO_CONTENT); 
+		}
+	}
+	
 	@GetMapping("/exists/{id}")
 	public ResponseEntity<Boolean> existsConferenceById(@PathVariable Long id){
 		boolean exists = conferenceService.existsById(id); 
@@ -82,11 +97,13 @@ public class ConferenceController {
 	}
 	
 	@PutMapping("/update/{id}")
-	public ResponseEntity<Boolean> updateConference(@PathVariable Long id, @RequestBody ConferenceDto conferenceDto) {
-		
-		
-		boolean isUpdate = conferenceService.updateConferenceById(id, conferenceDto);
-		return new ResponseEntity<Boolean>(isUpdate, HttpStatus.OK); 
+	public ResponseEntity<Conference> updateConference(@PathVariable Long id, @RequestBody ConferenceDto conferenceDto) {
+		 Optional<Conference> conferenceOptional = conferenceService.updateConferenceById(id, conferenceDto);
+		 if (conferenceOptional.isPresent()) {
+			return ResponseEntity.ok().body(conferenceOptional.get());
+		}else {
+			return ResponseEntity.noContent().build(); 
+		}
 	}
 	
 	@DeleteMapping("/delete/{id}")

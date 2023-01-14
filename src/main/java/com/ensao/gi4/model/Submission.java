@@ -38,7 +38,9 @@ public class Submission {
 	@JoinColumn(name = "conference_id", nullable = false)
 	@JsonBackReference
 	private Conference conference;
-	@OneToMany(mappedBy = "submission")
+	@OneToMany
 	private List<Author> authors; 
+	private Boolean isEvaluate = false; 
+	private Boolean isValidate = false; 
 
 }

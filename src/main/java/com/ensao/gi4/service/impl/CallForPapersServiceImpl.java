@@ -34,20 +34,20 @@ public class CallForPapersServiceImpl implements CallForPapersService {
 	
 
 	@Override
-	public Long add(CallForPapersDto callForPapersDto, Long conferenceId) throws JsonMappingException, JsonProcessingException {
+	public Optional<CallForPapers> add(CallForPapersDto callForPapersDto, Long conferenceId) throws JsonMappingException, JsonProcessingException {
 
-		Optional<Conference> conferenceOptional = conferenceRepository.findById(conferenceId);
-		boolean exists = conferenceOptional.isPresent();
+		Optional<Conference> optionalConference = conferenceRepository.findById(conferenceId);
+		boolean exists = optionalConference.isPresent();
 
 		if (exists) {
 			CallForPapers callForPapers = Mapper.toCallForPapers(callForPapersDto); 
-			callForPapers.setConference(conferenceOptional.get());
+			callForPapers.setConference(optionalConference.get());
 			topicRepository.saveAll(callForPapers.getTopics());
 			callForPapersRepository.save(callForPapers);
 			
-			return callForPapers.getId();
+			return Optional.of(callForPapers);
 		} else {
-			return -1l;
+			return Optional.empty();
 		}
 
 	}
@@ -62,14 +62,28 @@ public class CallForPapersServiceImpl implements CallForPapersService {
 			callForPapers = mappedCallForPapers(tuples);
 			return Optional.of(callForPapers);
 		}else {
-			Optional<Conference> conferenceOptional = conferenceRepository.findById(confernceId);
-			boolean exists = conferenceOptional.isPresent(); 
 			
-			return exists ? callForPapersRepository.findByConference(conferenceOptional.get()) : Optional.empty();
+			Optional<Conference> optionalConference = conferenceRepository.findById(confernceId);
+			boolean exists = optionalConference.isPresent(); 
+	
+			return exists ? callForPapersRepository.findByConference(optionalConference.get()) : Optional.empty();
 		}
 
 	}
 
+	@Override
+	public boolean existsByConferenceId(Long confernceId) {
+		
+		boolean exists = conferenceRepository.existsById(confernceId);
+		
+		if (exists) {
+			Optional<Conference> optionalConference = conferenceRepository.findById(confernceId); 
+			return callForPapersRepository.existsByConference(optionalConference.get()); 
+		}
+		
+		return false;
+	}
+	
 	private CallForPapers mappedCallForPapers(List<Tuple> tuples) {
 		CallForPapers callForPapers;
 		Conference conference;
@@ -83,20 +97,6 @@ public class CallForPapersServiceImpl implements CallForPapersService {
 		return callForPapers;
 	}
 
-
-	@Override
-	public boolean existsByConferenceId(Long confernceId) {
-		
-		boolean exists = conferenceRepository.existsById(confernceId);
-		
-		if (exists) {
-			Optional<Conference> conferenceOptional = conferenceRepository.findById(confernceId); 
-			return callForPapersRepository.existsByConference(conferenceOptional.get()); 
-		}
-		
-		return false;
-	}
-	
 	private Conference conferenceMapper(Tuple tuple) {
 		Conference conference;
 		conference = new Conference();

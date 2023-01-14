@@ -44,6 +44,7 @@ public class Conference {
 	private List<Submission> submissions;
 	@OneToOne
 	@JoinColumn(name = "user_id")
+	@JsonManagedReference
 	private User user;
 	@OneToOne(mappedBy = "conference")
 	@JsonBackReference

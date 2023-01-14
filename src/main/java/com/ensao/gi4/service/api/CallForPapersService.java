@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
 public interface CallForPapersService {
-	Long add(CallForPapersDto callForPapersDto, Long confernceId) throws JsonMappingException, JsonProcessingException;
+	Optional<CallForPapers> add(CallForPapersDto callForPapersDto, Long confernceId) throws JsonMappingException, JsonProcessingException;
 	Optional<CallForPapers> findByConferenceId(Long confernceId); 
 	boolean existsByConferenceId(Long confernceId);
 

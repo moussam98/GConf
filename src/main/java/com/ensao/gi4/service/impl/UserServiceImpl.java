@@ -14,6 +14,7 @@ import com.ensao.gi4.model.Role;
 import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.UserRepository;
 import com.ensao.gi4.service.api.UserService;
+import com.google.common.base.Strings;
 
 import lombok.AllArgsConstructor;
 
@@ -29,11 +30,11 @@ public class UserServiceImpl implements UserService {
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
 
 		Optional<User> userOptional = userRepository.findByEmail(email);
-
+		
 		if (userOptional.isPresent()) {
 			User user = userOptional.get();
-			return new org.springframework.security.core.userdetails.User(user.getEmail(),
-					user.getPassword(), user.getAuthorities());
+			return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(),
+					user.getAuthorities());
 		} else {
 			throw new UsernameNotFoundException(String.format("User with email %s not found", email));
 		}
@@ -45,7 +46,7 @@ public class UserServiceImpl implements UserService {
 		boolean userExists = userRepository.findByEmail(user.getEmail()).isPresent();
 
 		if (userExists) {
-			throw new IllegalStateException("Email already taken");
+			return -1l;
 		}
 
 		String encodedPassword = passwordEncoder.encode(user.getPassword());
@@ -62,7 +63,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public Optional<List<User>> findAll() {
-		return Optional.of(userRepository.findAll()); 
+		return Optional.of(userRepository.findAll());
 	}
 
 	@Override
@@ -77,26 +78,25 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public Boolean update(UserDto userDto, String email) {
-		
-		Optional<User> userOptional = userRepository.findByEmail(email);
-		
-		if (userOptional.isPresent()) {
-			
-			User user = userOptional.get();
+
+		Optional<User> optionalUser = userRepository.findByEmail(email);
+
+		if (optionalUser.isPresent()) {
+
+			User user = optionalUser.get();
 			user.setFirstname(userDto.getFirstname());
 			user.setLastname(userDto.getLastname());
 			user.setEmail(userDto.getEmail());
-			
-			if (Optional.of(userDto.getPassword()).isPresent()) {
+
+			if ( !Strings.isNullOrEmpty(userDto.getPassword())){
 				String encodedPassword = passwordEncoder.encode(userDto.getPassword());
 				user.setPassword(encodedPassword);
 			}
-			
-			return true; 
+
+			return true;
 		}
-		
+
 		return false;
 	}
-
 
 }

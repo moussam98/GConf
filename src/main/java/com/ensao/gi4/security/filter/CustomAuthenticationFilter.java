@@ -1,8 +1,10 @@
 package com.ensao.gi4.security.filter;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -22,53 +24,56 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.ensao.gi4.security.config.JwtConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.AllArgsConstructor;
 
+@AllArgsConstructor
 public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
 	private final AuthenticationManager authenticationManager;
-	private static final String SECRET = "fj32Jfv02Mq33g0f8ioDkw";
-	
-	public CustomAuthenticationFilter(AuthenticationManager authenticationManager) {
-		this.authenticationManager = authenticationManager;
-	}
+	private final JwtConfig jwtConfig;
 
 	@Override
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException {
-		
-		String username = request.getParameter("username"); 
+		String username = request.getParameter("username");
 		String password = request.getParameter("password");
-		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
+		UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,
+				password);
 		return authenticationManager.authenticate(authenticationToken);
-		
+
 	}
 
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
 			Authentication authResult) throws IOException, ServletException {
-		
-		User user =  (User) authResult.getPrincipal();
-		Algorithm algorithm = Algorithm.HMAC256(SECRET);
-		String token = JWT.create()
-				.withSubject(user.getUsername())
-				.withExpiresAt(new Date(System.currentTimeMillis() + 60 * 60 * 1000))
-				.withIssuer("auth0")
-				.withClaim("roles", user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-				.sign(algorithm);
-		
-		// TODO make refresh token 
-		Map<String , String> tokenMap = new HashMap<>();
+
+		String token = createToken(authResult);
+
+		Map<String, String> tokenMap = new HashMap<>();
 		tokenMap.put("token", token);
-		
 		response.setContentType(MediaType.APPLICATION_JSON.toString());
 		new ObjectMapper().writeValue(response.getOutputStream(), tokenMap);
-		
+
 	}
 
-	
-	
+	private String createToken(Authentication authResult) {
+		User user = (User) authResult.getPrincipal();
+		Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecretKey());
+		String token = JWT.create().withSubject(user.getUsername()).withIssuedAt(new Date())
+				.withExpiresAt(getTokenExpiration()).withIssuer("auth0").withClaim("roles", getRoles(user))
+				.sign(algorithm);
+		return token;
+	}
+
+	private java.sql.Date getTokenExpiration() {
+		return java.sql.Date.valueOf(LocalDate.now().plusDays(jwtConfig.getTokenExpirationAfterDays()));
+	}
+
+	private List<String> getRoles(User user) {
+		return user.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+	}
 
 }

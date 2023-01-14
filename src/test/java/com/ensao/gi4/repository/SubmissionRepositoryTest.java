@@ -15,10 +15,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.http.MediaType;
 
+import com.ensao.gi4.model.Author;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.model.Document;
 import com.ensao.gi4.model.Keyword;
-import com.ensao.gi4.model.Person;
 import com.ensao.gi4.model.Submission;
 
 @DataJpaTest
@@ -33,9 +33,11 @@ public class SubmissionRepositoryTest {
 	private KeywordRepository keywordRepository;
 	@Autowired
 	private DocumentRepository documentRepository;
+	@Autowired
+	private AuthorRepository authorRepository;
 	private Conference conference;
-	private Person person1, person2, person3, person4;
-	private Keyword keyword1, keyword2, keyword3, keyword4;
+	private List<Author> authors;
+	private Set<Keyword> keywords;
 	private Document document;
 	private Submission submission;
 
@@ -44,97 +46,75 @@ public class SubmissionRepositoryTest {
 		conference = new Conference("International Confernce", "IC", "UMP", "Oujda", "Morrocco", LocalDate.now(),
 				LocalDate.of(2022, 8, 30), "Computer Science", "Artificial Intelligence", "organizeName");
 
-//		person1 = new Person(null, "Ali1", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
-//		person2 = new Person(null, "Ali2", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
-//		person3 = new Person(null, "Ali3", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
-//		person4 = new Person(null, "Ali4", "Moussa", "ali@gmail.com", "Morocco", "ENSAO", null);
+		Author author = new Author();
+		Author author2 = new Author();
+		author.setFirstname("Ali");
+		author.setLastname("Moussa");
+		author.setEmail("ali@gmail.com");
+		author.setCountry("Niger");
+		author.setOrganization("EMIG");
 
-		keyword1 = new Keyword(null, "Artificial Intelligence");
-		keyword2 = new Keyword(null, "Internet Of Things");
-		keyword3 = new Keyword(null, "Block chain");
-		keyword4 = new Keyword(null, "Technologie");
+		author2.setFirstname("Anna");
+		author2.setLastname("Smith");
+		author2.setEmail("anna@gmail.com");
+		author2.setCountry("United States");
+		author2.setOrganization("Silicon Valley");
 
-		document = new Document();
+		authors = new ArrayList<>();
+		authors.add(author);
+		authors.add(author2);
+
+		Keyword keyword1 = new Keyword(null, "Artificial Intelligence");
+		Keyword keyword2 = new Keyword(null, "Internet Of Things");
+		Keyword keyword3 = new Keyword(null, "Block chain");
+		Keyword keyword4 = new Keyword(null, "Technologie");
+
+		keywords = new HashSet<>();
+		keywords.add(keyword1);
+		keywords.add(keyword2);
+		keywords.add(keyword3);
+		keywords.add(keyword4);
+
 		document = new Document();
 		document.setFilename("Test.pdf");
 		document.setFileType(MediaType.APPLICATION_PDF_VALUE);
 		document.setData("Hello world".getBytes());
 
-		submission = new Submission(null, "Subject", "Description of subject", null, null, null, null);
+		submission = new Submission(null, "Title of submission", "Description of subject", null, null, null, null, null,
+				null);
 
 	}
 
 	@Test
 	void shouldAddSubmission() {
-		// when
-		conference = conferenceRepository.save(conference);
-
-//		personRepository.save(person1);
-//		personRepository.save(person2);
-//		personRepository.save(person3);
-//		personRepository.save(person4);
-
-		keywordRepository.save(keyword1);
-		keywordRepository.save(keyword2);
-		keywordRepository.save(keyword3);
-		keywordRepository.save(keyword4);
-
+		// given
+		conferenceRepository.save(conference);
+		authorRepository.saveAll(authors);
+		keywordRepository.saveAll(keywords);
 		documentRepository.save(document);
 
-		Set<Keyword> keywords = new HashSet<>();
-		keywords.add(keyword1);
-		keywords.add(keyword2);
-		keywords.add(keyword3);
-		keywords.add(keyword4);
-
-		List<Person> authors = new ArrayList<>();
-		authors.add(person1);
-		authors.add(person2);
-		authors.add(person3);
-		authors.add(person4);
-
 		submission.setConference(conference);
-		//submission.setAuthors(authors);
+		submission.setAuthors(authors);
 		submission.setKeywords(keywords);
 		submission.setDocument(document);
 
-		Submission expectedSubmission = underTest.save(submission);
+		// when
+		Submission actualSubmission = underTest.save(submission);
 
 		// then
-		assertThat(expectedSubmission).isEqualTo(submission);
+		assertThat(actualSubmission).isEqualTo(submission);
 	}
 
 	@Test
 	void shouldFindAllSubmission() {
 		// given
-		conference = conferenceRepository.save(conference);
-
-//		personRepository.save(person1);
-//		personRepository.save(person2);
-//		personRepository.save(person3);
-//		personRepository.save(person4);
-
-		keywordRepository.save(keyword1);
-		keywordRepository.save(keyword2);
-		keywordRepository.save(keyword3);
-		keywordRepository.save(keyword4);
-
+		conferenceRepository.save(conference);
+		authorRepository.saveAll(authors);
+		keywordRepository.saveAll(keywords);
 		documentRepository.save(document);
 
-		Set<Keyword> keywords = new HashSet<>();
-		keywords.add(keyword1);
-		keywords.add(keyword2);
-		keywords.add(keyword3);
-		keywords.add(keyword4);
-
-		List<Person> authors = new ArrayList<>();
-		authors.add(person1);
-		authors.add(person2);
-		authors.add(person3);
-		authors.add(person4);
-
 		submission.setConference(conference);
-		//submission.setAuthors(authors);
+		submission.setAuthors(authors);
 		submission.setKeywords(keywords);
 		submission.setDocument(document);
 
@@ -151,47 +131,26 @@ public class SubmissionRepositoryTest {
 	}
 
 	@Test
-	void shouldFindDocumentById() {
+	void shouldFindConferenceById() {
 		// given
-		conference = conferenceRepository.save(conference);
-
-//		personRepository.save(person1);
-//		personRepository.save(person2);
-//		personRepository.save(person3);
-//		personRepository.save(person4);
-
-		keywordRepository.save(keyword1);
-		keywordRepository.save(keyword2);
-		keywordRepository.save(keyword3);
-		keywordRepository.save(keyword4);
-
+		conferenceRepository.save(conference);
+		authorRepository.saveAll(authors);
+		keywordRepository.saveAll(keywords);
 		documentRepository.save(document);
 
-		Set<Keyword> keywords = new HashSet<>();
-		keywords.add(keyword1);
-		keywords.add(keyword2);
-		keywords.add(keyword3);
-		keywords.add(keyword4);
-
-		List<Person> authors = new ArrayList<>();
-		authors.add(person1);
-		authors.add(person2);
-		authors.add(person3);
-		authors.add(person4);
-
 		submission.setConference(conference);
-		//submission.setAuthors(authors);
+		submission.setAuthors(authors);
 		submission.setKeywords(keywords);
 		submission.setDocument(document);
 
-		Submission savedSubmission = underTest.save(submission);
-		
+		underTest.save(submission);
+
 		// when
-		Optional<Submission> submissionOptional = underTest.findById(savedSubmission.getId());
-		
-		// then 
-		assertThat(submissionOptional).isNotEmpty(); 
-		assertThat(submissionOptional).hasValue(savedSubmission); 
+		Optional<Submission> submissionOptional = underTest.findById(submission.getId());
+
+		// then
+		assertThat(submissionOptional).isNotEmpty();
+		assertThat(submissionOptional).hasValue(submission);
 	}
 
 }

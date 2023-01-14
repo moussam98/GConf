@@ -24,7 +24,7 @@ public class RegistrationServiceImpl implements RegistrationService{
 		boolean isValidEmail = emailValidator.test(userDto.getEmail());
 		
 		if (!isValidEmail) {
-			throw new IllegalStateException("Email not valid ! ");
+			return "-2"; 
 		}
 		
 		User user  = Mapper.toUser(userDto);

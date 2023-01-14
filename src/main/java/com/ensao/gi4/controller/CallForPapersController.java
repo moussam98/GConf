@@ -2,13 +2,12 @@ package com.ensao.gi4.controller;
 
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,23 +17,23 @@ import com.ensao.gi4.service.api.CallForPapersService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
+import lombok.AllArgsConstructor;
+
 @RestController
 @RequestMapping("/api/v1/cfp")
+@AllArgsConstructor
 public class CallForPapersController {
 
-	@Autowired
-	private CallForPapersService callForPapersService;
+	private final CallForPapersService callForPapersService;
 
 	@PostMapping("/add/{conferenceId}")
-	public ResponseEntity<String> addCFP(@ModelAttribute CallForPapersDto callForPapersDto, @PathVariable Long conferenceId) throws JsonMappingException, JsonProcessingException {
-		Long result = callForPapersService.add(callForPapersDto, conferenceId);
+	public ResponseEntity<CallForPapers> addCFP(@RequestBody CallForPapersDto callForPapersDto, @PathVariable Long conferenceId) throws JsonMappingException, JsonProcessingException {
+		 Optional<CallForPapers> callForPapersOptional = callForPapersService.add(callForPapersDto, conferenceId);
 
-		if (result == -1) {
-			return new ResponseEntity<String>(
-					"We cannot add call for papers because the corresponding conference does not exist",
-					HttpStatus.BAD_REQUEST);
+		if (callForPapersOptional.isPresent()) {
+			return new ResponseEntity<CallForPapers>(callForPapersOptional.get(), HttpStatus.OK);
 		} else {
-			return new ResponseEntity<String>(result.toString(), HttpStatus.OK);
+			return new ResponseEntity<CallForPapers>(HttpStatus.BAD_REQUEST);
 		}
 	}
 

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ensao.gi4.dto.ConferenceDto;
+import com.ensao.gi4.dto.ConferenceFirstInfoDto;
 import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.model.Document;
@@ -30,8 +31,8 @@ public class ConferenceServiceImpl implements ConferenceService {
 	private final UserRepository userRepository;
 
 	@Override
-	public Long add(ConferenceDto conferenceDto, Long userId) {
-		Conference conference = Mapper.toConference(conferenceDto);
+	public Long add(ConferenceFirstInfoDto conferenceFirstInfoDto, Long userId) {
+		Conference conference = Mapper.firstInfoToConference(conferenceFirstInfoDto);
 
 		boolean existsByName = conferenceRepository.existsByName(conference.getName());
 		boolean existsByAcronym = conferenceRepository.existsByAcronym(conference.getAcronym());
@@ -39,9 +40,10 @@ public class ConferenceServiceImpl implements ConferenceService {
 		if (existsByName && existsByAcronym) {
 			return -1l;
 		} else {
-			Optional<User> userOptional = userRepository.findById(userId);
-			conference.setUser(userOptional.get());
-			return conferenceRepository.save(conference).getId();
+			Optional<User> optionalUser = userRepository.findById(userId);
+			conference.setUser(optionalUser.get());
+			Conference savedConference = conferenceRepository.save(conference);
+			return savedConference.getId();
 		}
 	}
 
@@ -49,7 +51,7 @@ public class ConferenceServiceImpl implements ConferenceService {
 	public Optional<Conference> findByName(String name) {
 		List<Tuple> tuples = conferenceRepository.findConferenceByName(name);
 		if (!tuples.isEmpty()) {
-			return mappedConference(tuples);
+			return conferenceMapper(tuples);
 		}else {
 			return conferenceRepository.findByName(name);
 		}
@@ -61,7 +63,7 @@ public class ConferenceServiceImpl implements ConferenceService {
 	public Optional<Conference> findByAcronym(String acronym) {
 		List<Tuple> tuples = conferenceRepository.findConferenceByAcronym(acronym);
 		if (!tuples.isEmpty()) {
-			return mappedConference(tuples);
+			return conferenceMapper(tuples);
 		}else {
 			return conferenceRepository.findByAcronym(acronym);
 		}
@@ -71,7 +73,7 @@ public class ConferenceServiceImpl implements ConferenceService {
 	public Optional<Conference> findById(Long id) {
 		List<Tuple> tuples = conferenceRepository.findConferenceById(id);
 		if (!tuples.isEmpty()) {
-			return mappedConference(tuples);
+			return conferenceMapper(tuples);
 		}else {
 			return conferenceRepository.findById(id);
 		}
@@ -83,7 +85,7 @@ public class ConferenceServiceImpl implements ConferenceService {
 	}
 
 	@Override
-	public boolean updateConferenceById(Long id, ConferenceDto conferenceDto) {
+	public Optional<Conference> updateConferenceById(Long id, ConferenceDto conferenceDto) {
 
 		Conference newConference = Mapper.toConference(conferenceDto);
 
@@ -91,9 +93,9 @@ public class ConferenceServiceImpl implements ConferenceService {
 
 		if (conferenceOptional.isPresent()) {
 			updateConference(newConference, conferenceOptional.get());
-			return true;
+			return conferenceOptional;
 		}else {
-			return false;			
+			return Optional.empty();			
 		}
 	}
 
@@ -118,7 +120,7 @@ public class ConferenceServiceImpl implements ConferenceService {
 		updatedConference.setOtherInfo(newConference.getOtherInfo());
 	}
 	
-	private Optional<Conference> mappedConference(List<Tuple> tuples) {
+	private Optional<Conference> conferenceMapper(List<Tuple> tuples) {
 		Conference conference;
 		List<Submission> submissions;
 		conference = tuples.get(0).get(0, Conference.class);
@@ -150,6 +152,22 @@ public class ConferenceServiceImpl implements ConferenceService {
 		document.setFilename(tuple.get(5, String.class));
 		document.setFileType(tuple.get(6, String.class));
 		return document;
+	}
+
+	@Override
+	public Optional<Conference> findByUser(Long userId) {
+		
+		Optional<User> userOptional = userRepository.findById(userId);
+		if (userOptional.isPresent()) {
+			List<Tuple> tuples = conferenceRepository.findConferenceByUser(userOptional.get());
+			
+			if (!tuples.isEmpty()) {
+				return conferenceMapper(tuples); 
+			}else {
+				return conferenceRepository.findByUser(userOptional.get());
+			}
+		}
+		return Optional.empty();
 	}
 
 }

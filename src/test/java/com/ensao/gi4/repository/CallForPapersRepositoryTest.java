@@ -27,35 +27,24 @@ public class CallForPapersRepositoryTest {
 	private TopicRepository topicRepository;
 	private Conference conference;
 	private CallForPapers callForPapers;
-	private Long conferenceId;
+	private Set<Topic> topics;
 
 	@BeforeEach
 	void setUp() {
 		conference = new Conference("International Confernce", "IC", "UMP", "Oujda", "Morrocco", LocalDate.now(),
 				LocalDate.of(2022, 8, 30), "Computer Science", "Artificial Intelligence", "organizeName");
-		conferenceId = conferenceRepository.save(conference).getId();
 
 		Topic topic1 = new Topic(null, "Medical");
 		Topic topic2 = new Topic(null, "Agricultural");
 		Topic topic3 = new Topic(null, "Automotive");
 		Topic topic4 = new Topic(null, "Education");
-		
-//		Topic topic1 = new Topic(null, "Medical", null);
-//		Topic topic2 = new Topic(null, "Agricultural", null);
-//		Topic topic3 = new Topic(null, "Automotive", null);
-//		Topic topic4 = new Topic(null, "Education", null);
-		
-		topicRepository.save(topic1);
-		topicRepository.save(topic2);
-		topicRepository.save(topic3);
-		topicRepository.save(topic4);
-		
-		Set<Topic> topics = new HashSet<>(); 
+
+		topics = new HashSet<>();
 		topics.add(topic1);
 		topics.add(topic2);
 		topics.add(topic3);
 		topics.add(topic4);
-		
+
 		callForPapers = new CallForPapers();
 		callForPapers.setStartDate(LocalDate.now());
 		callForPapers.setEndDate(LocalDate.of(2022, 8, 30));
@@ -66,70 +55,66 @@ public class CallForPapersRepositoryTest {
 	@Test
 	void shouldAddCallForPapers() {
 		// given
-		Optional<Conference> conferenceCFP = conferenceRepository.findById(conferenceId);
+		conferenceRepository.save(conference);
+		topicRepository.saveAll(topics);
+
+		callForPapers.setConference(conference);
+		callForPapers.setTopics(topics);
 
 		// when
-		assertThat(conferenceCFP).isNotEmpty();
-		callForPapers.setConference(conferenceCFP.get());
-		conferenceCFP.get().setCallForPapers(callForPapers);
-		CallForPapers expectedCFP = underTest.save(callForPapers);
-		boolean isExist = underTest.existsById(expectedCFP.getId());
+		CallForPapers savedCallForPapers = underTest.save(callForPapers);
 
 		// then
-		assertThat(expectedCFP).isEqualTo(callForPapers);
-		assertThat(isExist).isTrue();
-		assertThat(conferenceCFP).hasValue(conference);
+		assertThat(savedCallForPapers).isEqualTo(callForPapers);
 
 	}
 
 	@Test
 	void shouldFindCFPByConference() {
 		// given
-		Optional<Conference> conferenceCFP = conferenceRepository.findById(conferenceId);
-		assertThat(conferenceCFP).isNotEmpty();
-		callForPapers.setConference(conferenceCFP.get());
-		conferenceCFP.get().setCallForPapers(callForPapers);
-		conferenceRepository.save(conferenceCFP.get());
+		conferenceRepository.save(conference);
+		topicRepository.saveAll(topics);
+
+		callForPapers.setConference(conference);
+		callForPapers.setTopics(topics);
 		underTest.save(callForPapers);
 
 		// when
-		//Optional<CallForPapers> expectedCFP = underTest.findByConference(conference);
+		Optional<CallForPapers> optionalCallForPapers = underTest.findByConference(conference);
 
 		// then
-		//assertThat(expectedCFP).isNotEmpty();
-		//assertThat(expectedCFP).hasValue(callForPapers);
-		assertThat(conferenceCFP).hasValue(conference);
+		assertThat(optionalCallForPapers).isNotEmpty();
+		assertThat(optionalCallForPapers).hasValue(callForPapers);
 
 	}
 
 	@Test
 	void shouldReturnEmptyIfCFPDoesNotExists() {
 		// given
-		Optional<Conference> conferenceCFP = conferenceRepository.findById(conferenceId);
-		assertThat(conferenceCFP).isNotEmpty();
+		conferenceRepository.save(conference);
 
 		// when
-		//Optional<CallForPapers> exepectedCFP = underTest.findByConference(conference);
+		Optional<CallForPapers> optionalCallForPapers = underTest.findByConference(conference);
 
 		// then
-		//assertThat(exepectedCFP).isEmpty();
+		assertThat(optionalCallForPapers).isEmpty();
 	}
 
 	@Test
 	void shouldCheckIfCFPExits() {
 		// given
-		Optional<Conference> conferenceCFP = conferenceRepository.findById(conferenceId);
-		assertThat(conferenceCFP).isNotEmpty();
-		callForPapers.setConference(conferenceCFP.get());
-		conferenceCFP.get().setCallForPapers(callForPapers);
-		conferenceRepository.save(conferenceCFP.get());
+		conferenceRepository.save(conference);
+		topicRepository.saveAll(topics);
+
+		callForPapers.setConference(conference);
+		callForPapers.setTopics(topics);
 		underTest.save(callForPapers);
 
 		// when
-		boolean isExist = underTest.existsByConference(conferenceCFP.get());
-		
-		// then 
-		assertThat(isExist).isTrue(); 
+		boolean isExist = underTest.existsByConference(conference);
+
+		// then
+		assertThat(isExist).isTrue();
 	}
 
 }

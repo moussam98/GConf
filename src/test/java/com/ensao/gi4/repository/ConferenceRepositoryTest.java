@@ -28,10 +28,10 @@ public class ConferenceRepositoryTest {
 	@Test
 	void shouldAddConference() {
 		// when
-		Conference expectedConference = underTest.save(conference);
+		Conference actualConference = underTest.save(conference);
 
 		// then
-		assertThat(expectedConference).isEqualTo(conference);
+		assertThat(actualConference).isEqualTo(conference);
 	}
 
 	@Test
@@ -40,10 +40,10 @@ public class ConferenceRepositoryTest {
 		underTest.save(conference);
 
 		// when
-		boolean exist = underTest.existsByName(conference.getName());
+		boolean exists = underTest.existsByName(conference.getName());
 
 		// then
-		assertThat(exist).isTrue();
+		assertThat(exists).isTrue();
 
 	}
 
@@ -53,32 +53,34 @@ public class ConferenceRepositoryTest {
 		underTest.save(conference);
 
 		// when
-		//Optional<Conference> expectedConference = underTest.findByName(conference.getName());
+		Optional<Conference> optionalConference = underTest.findByName(conference.getName());
 
 		// then
-//		assertThat(expectedConference).isNotEmpty();
-//		assertThat(expectedConference).hasValue(conference);
+		assertThat(optionalConference).isNotEmpty();
+		assertThat(optionalConference).hasValue(conference);
 	}
 
 	@Test
 	void shouldReturnEmptyIfConferenceNameDoesNotExists() {
 		// when
-		//Optional<Conference> expectedConference = underTest.findByName(conference.getName());
+		Optional<Conference> optionalConference = underTest.findByName(conference.getName());
 
 		// then
-	//	assertThat(expectedConference).isEmpty();
+		assertThat(optionalConference).isEmpty();
 	}
-
+	
 	@Test
-	void shouldTestIfConferenceExistByAcronymName() {
-		// given 
-		underTest.save(conference); 
-		
+	void shouldfindConferenceById() {
+		underTest.save(conference);
+
 		// when 
-		boolean exists = underTest.existsByAcronym(conference.getAcronym());
+		Optional<Conference> optionalConference = underTest.findById(conference.getId());
 		
 		// then 
-		assertThat(exists).isTrue(); 
+		assertThat(optionalConference).isNotEmpty();
+		assertThat(optionalConference).hasValue(conference); 
 	}
+
+	
 
 }
