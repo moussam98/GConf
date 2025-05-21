@@ -8,10 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -48,7 +47,7 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 
 	@Override
 	protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain,
-			Authentication authResult) throws IOException, ServletException {
+			Authentication authResult) throws IOException {
 
 		String token = createToken(authResult);
 
@@ -62,10 +61,9 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
 	private String createToken(Authentication authResult) {
 		User user = (User) authResult.getPrincipal();
 		Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecretKey());
-		String token = JWT.create().withSubject(user.getUsername()).withIssuedAt(new Date())
-				.withExpiresAt(getTokenExpiration()).withIssuer("auth0").withClaim("roles", getRoles(user))
-				.sign(algorithm);
-		return token;
+        return JWT.create().withSubject(user.getUsername()).withIssuedAt(new Date())
+                .withExpiresAt(getTokenExpiration()).withIssuer("auth0").withClaim("roles", getRoles(user))
+                .sign(algorithm);
 	}
 
 	private java.sql.Date getTokenExpiration() {

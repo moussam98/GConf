@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +19,6 @@ import com.ensao.gi4.repository.ConferenceRepository;
 import com.ensao.gi4.repository.TopicRepository;
 import com.ensao.gi4.service.api.CallForPapersService;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 
 import lombok.AllArgsConstructor;
 
@@ -34,7 +33,7 @@ public class CallForPapersServiceImpl implements CallForPapersService {
 	
 
 	@Override
-	public Optional<CallForPapers> add(CallForPapersDto callForPapersDto, Long conferenceId) throws JsonMappingException, JsonProcessingException {
+	public Optional<CallForPapers> add(CallForPapersDto callForPapersDto, Long conferenceId) throws JsonProcessingException {
 
 		Optional<Conference> optionalConference = conferenceRepository.findById(conferenceId);
 		boolean exists = optionalConference.isPresent();
@@ -74,20 +73,16 @@ public class CallForPapersServiceImpl implements CallForPapersService {
 	@Override
 	public boolean existsByConferenceId(Long confernceId) {
 		
-		boolean exists = conferenceRepository.existsById(confernceId);
-		
-		if (exists) {
-			Optional<Conference> optionalConference = conferenceRepository.findById(confernceId); 
-			return callForPapersRepository.existsByConference(optionalConference.get()); 
-		}
-		
-		return false;
-	}
+		Optional<Conference> optionalConference = conferenceRepository.findById(confernceId);
+
+        return optionalConference.filter(callForPapersRepository::existsByConference).isPresent();
+
+    }
 	
 	private CallForPapers mappedCallForPapers(List<Tuple> tuples) {
 		CallForPapers callForPapers;
 		Conference conference;
-		callForPapers = tuples.get(0).get(0, CallForPapers.class); 
+		callForPapers = tuples.getFirst().get(0, CallForPapers.class);
 		for (Tuple tuple : tuples) {
 			if (tuple.get(1) != null) {
 				conference = conferenceMapper(tuple);

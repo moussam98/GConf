@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,10 +44,10 @@ public class SubmissionServiceImpl implements SubmissionService {
 		Optional<User> optionalUser = userRepository.findById(userId); 
 
 		if (optionalUser .isPresent() ) {
-			return saveSubmissionIfConferenceExists(submissionDto, optionalUser ); 
+			return saveSubmissionIfConferenceExists(submissionDto, optionalUser.get() );
 		}
 		else {
-			return -1l;
+			return -1L;
 		}
 	}
 
@@ -118,8 +118,8 @@ public class SubmissionServiceImpl implements SubmissionService {
 	}
 	
 	private Submission submissionMapper(List<Tuple> tuples) {
-		Submission submission = tuples.get(0).get(0, Submission.class);
-		if (tuples.get(0).get(1) != null) {
+		Submission submission = tuples.getFirst().get(0, Submission.class);
+		if (tuples.getFirst().get(1) != null) {
 			Document document = documentMapper(tuples);
 			submission.setDocument(document);
 		}
@@ -138,20 +138,20 @@ public class SubmissionServiceImpl implements SubmissionService {
 	private Document documentMapper(List<Tuple> tuples) {
 		Document document;
 		document = new Document();
-		document.setId(tuples.get(0).get(1, Long.class));
-		document.setFilename(tuples.get(0).get(2, String.class));
-		document.setFileType(tuples.get(0).get(3, String.class));
+		document.setId(tuples.getFirst().get(1, Long.class));
+		document.setFilename(tuples.getFirst().get(2, String.class));
+		document.setFileType(tuples.getFirst().get(3, String.class));
 		return document;
 	}
 	
-	private Long saveSubmissionIfConferenceExists(SubmissionDto submissionDto, Optional<User> userOptional) throws IOException{
-		Optional<Conference> conferenceOptional = conferenceRepository.findByUser(userOptional.get());
+	private Long saveSubmissionIfConferenceExists(SubmissionDto submissionDto, User user) throws IOException{
+		Optional<Conference> conferenceOptional = conferenceRepository.findByUser(user);
 		
 		if (conferenceOptional.isPresent()) {	
 			Submission submission = saveSubmission(submissionDto, conferenceOptional);
 			return submission.getId();
 		}
-		return -1l;
+		return -1L;
 	}
 
 	private Submission saveSubmission(SubmissionDto submissionDto, Optional<Conference> conferenceOptional)
@@ -159,7 +159,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 		Submission submission = Mapper.toSubmission(submissionDto);
 		keywordRepository.saveAll(submission.getKeywords());
 		documentRepository.save(submission.getDocument());
-		submission.setConference(conferenceOptional.get());
+		conferenceOptional.ifPresent(submission::setConference);
 		authorRepository.saveAll(submission.getAuthors());
 		submissionRepository.save(submission);
 		return submission;

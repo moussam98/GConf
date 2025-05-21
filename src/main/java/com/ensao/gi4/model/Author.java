@@ -1,8 +1,6 @@
 package com.ensao.gi4.model;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 

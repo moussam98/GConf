@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import javax.persistence.Tuple;
+import jakarta.persistence.Tuple;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,10 +38,10 @@ public class ConferenceServiceImpl implements ConferenceService {
 		boolean existsByAcronym = conferenceRepository.existsByAcronym(conference.getAcronym());
 
 		if (existsByName && existsByAcronym) {
-			return -1l;
+			return -1L;
 		} else {
 			Optional<User> optionalUser = userRepository.findById(userId);
-			conference.setUser(optionalUser.get());
+			optionalUser.ifPresent(conference::setUser);
 			Conference savedConference = conferenceRepository.save(conference);
 			return savedConference.getId();
 		}
@@ -123,7 +123,7 @@ public class ConferenceServiceImpl implements ConferenceService {
 	private Optional<Conference> conferenceMapper(List<Tuple> tuples) {
 		Conference conference;
 		List<Submission> submissions;
-		conference = tuples.get(0).get(0, Conference.class);
+		conference = tuples.getFirst().get(0, Conference.class);
 		submissions = new ArrayList<>(); 
 		for (Tuple tuple : tuples) {
 			
