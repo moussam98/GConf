@@ -1,22 +1,5 @@
 package com.ensao.gi4.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import com.ensao.gi4.dto.CallForPapersDto;
 import com.ensao.gi4.model.CallForPapers;
 import com.ensao.gi4.model.Conference;
@@ -27,7 +10,22 @@ import com.ensao.gi4.repository.TopicRepository;
 import com.ensao.gi4.service.api.CallForPapersService;
 import com.ensao.gi4.service.impl.CallForPapersServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class CallForPapersServiceTest {
@@ -48,9 +46,9 @@ public class CallForPapersServiceTest {
 		underTest = new CallForPapersServiceImpl(callForPapersRepository, conferenceRepository, topicRepository);
 
 		// given
-		conference = new Conference("International Confernce", "IC", "UMP", "Oujda", "Morrocco", LocalDate.now(),
+		conference = new Conference("International Confernce", "IC", "UMP", "Oujda", "Morocco", LocalDate.now(),
 				LocalDate.of(2022, 8, 30), "Computer Science", "Artificial Intelligence", "organizeName");
-		conference.setId(1l);
+		conference.setId(1L);
 
 		Topic topic1 = new Topic(null, "Medical");
 		Topic topic2 = new Topic(null, "Agricultural");
@@ -71,7 +69,7 @@ public class CallForPapersServiceTest {
 	}
 
 	@Test
-	void shouldAddCFP() throws JsonMappingException, JsonProcessingException {
+	void shouldAddCFP() throws JsonProcessingException {
 		// given
 		CallForPapersDto callForPapersDto = new CallForPapersDto("10/04/2022", "30/6/2022", topics,
 				"Guidelines instruction");
@@ -80,7 +78,7 @@ public class CallForPapersServiceTest {
 
 		// when
 		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.of(conference));
-		when(topicRepository.saveAll(topics)).thenReturn(topics.stream().collect(Collectors.toList()));
+		when(topicRepository.saveAll(topics)).thenReturn(new ArrayList<>(topics));
 		when(callForPapersRepository.save(callForPapers)).thenReturn(callForPapers);
 		ArgumentCaptor<CallForPapers> cfpArgumentCaptor = ArgumentCaptor.forClass(CallForPapers.class);
 
@@ -94,7 +92,7 @@ public class CallForPapersServiceTest {
 	}
 
 	@Test
-	void shouldNotAddCFP() throws JsonMappingException, JsonProcessingException {
+	void shouldNotAddCFP() throws JsonProcessingException {
 		// given
 		CallForPapersDto callForPapersDto = new CallForPapersDto("10/10/2022", "30/8/2022", topics,
 				"Guidelines instruction");
@@ -133,7 +131,6 @@ public class CallForPapersServiceTest {
 	@Test
 	void shouldCheckIfCFPExists() {
 		// when
-		when(conferenceRepository.existsById(conference.getId())).thenReturn(true);
 		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.of(conference));
 		when(callForPapersRepository.existsByConference(conference)).thenReturn(true);
 		boolean exists = underTest.existsByConferenceId(conference.getId());
@@ -142,8 +139,6 @@ public class CallForPapersServiceTest {
 
 		// then
 		assertThat(exists).isEqualTo(true);
-		verify(conferenceRepository).existsById(idArgumentCaptor.capture());
-		assertThat(idArgumentCaptor.getValue()).isEqualTo(conference.getId());
 		verify(conferenceRepository).findById(idArgumentCaptor.capture());
 		assertThat(idArgumentCaptor.getValue()).isEqualTo(conference.getId());
 		verify(callForPapersRepository).existsByConference(conferenceArgumentCaptor.capture());

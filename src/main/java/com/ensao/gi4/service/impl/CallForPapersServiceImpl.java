@@ -1,14 +1,5 @@
 package com.ensao.gi4.service.impl;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-
-import jakarta.persistence.Tuple;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ensao.gi4.dto.CallForPapersDto;
 import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.CallForPapers;
@@ -19,8 +10,14 @@ import com.ensao.gi4.repository.ConferenceRepository;
 import com.ensao.gi4.repository.TopicRepository;
 import com.ensao.gi4.service.api.CallForPapersService;
 import com.fasterxml.jackson.core.JsonProcessingException;
-
+import jakarta.persistence.Tuple;
 import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -52,9 +49,9 @@ public class CallForPapersServiceImpl implements CallForPapersService {
 	}
 
 	@Override
-	public Optional<CallForPapers> findByConferenceId(Long confernceId) {
+	public Optional<CallForPapers> findByConferenceId(Long conferenceId) {
 		
-		List<Tuple> tuples = callForPapersRepository.findCfpById(confernceId); 
+		List<Tuple> tuples = callForPapersRepository.findCfpById(conferenceId);
 		CallForPapers callForPapers; 
 
 		if (!tuples.isEmpty()) {
@@ -62,7 +59,7 @@ public class CallForPapersServiceImpl implements CallForPapersService {
 			return Optional.of(callForPapers);
 		}else {
 			
-			Optional<Conference> optionalConference = conferenceRepository.findById(confernceId);
+			Optional<Conference> optionalConference = conferenceRepository.findById(conferenceId);
 			boolean exists = optionalConference.isPresent(); 
 	
 			return exists ? callForPapersRepository.findByConference(optionalConference.get()) : Optional.empty();
@@ -71,9 +68,9 @@ public class CallForPapersServiceImpl implements CallForPapersService {
 	}
 
 	@Override
-	public boolean existsByConferenceId(Long confernceId) {
+	public boolean existsByConferenceId(Long conferenceId) {
 		
-		Optional<Conference> optionalConference = conferenceRepository.findById(confernceId);
+		Optional<Conference> optionalConference = conferenceRepository.findById(conferenceId);
 
         return optionalConference.filter(callForPapersRepository::existsByConference).isPresent();
 

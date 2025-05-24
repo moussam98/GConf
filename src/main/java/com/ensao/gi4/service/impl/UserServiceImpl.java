@@ -1,22 +1,19 @@
 package com.ensao.gi4.service.impl;
 
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ensao.gi4.dto.UserDto;
 import com.ensao.gi4.model.Role;
 import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.UserRepository;
 import com.ensao.gi4.service.api.UserService;
-import com.google.common.base.Strings;
-
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -24,7 +21,7 @@ import lombok.AllArgsConstructor;
 public class UserServiceImpl implements UserService {
 
 	private final UserRepository userRepository;
-	private final BCryptPasswordEncoder passwordEncoder;
+	private final PasswordEncoder passwordEncoder;
 
 	@Override
 	public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -46,7 +43,7 @@ public class UserServiceImpl implements UserService {
 		boolean userExists = userRepository.findByEmail(user.getEmail()).isPresent();
 
 		if (userExists) {
-			return -1l;
+			return -1L;
 		}
 
 		String encodedPassword = passwordEncoder.encode(user.getPassword());
@@ -88,7 +85,7 @@ public class UserServiceImpl implements UserService {
 			user.setLastname(userDto.getLastname());
 			user.setEmail(userDto.getEmail());
 
-			if ( !Strings.isNullOrEmpty(userDto.getPassword())){
+			if ( userDto.getPassword() != null && !userDto.getPassword().isEmpty()){
 				String encodedPassword = passwordEncoder.encode(userDto.getPassword());
 				user.setPassword(encodedPassword);
 			}

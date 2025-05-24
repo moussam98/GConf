@@ -1,15 +1,14 @@
 package com.ensao.gi4.service.api;
 
-import java.util.Optional;
-
 import com.ensao.gi4.dto.CallForPapersDto;
 import com.ensao.gi4.model.CallForPapers;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+
+import java.util.Optional;
 
 public interface CallForPapersService {
-	Optional<CallForPapers> add(CallForPapersDto callForPapersDto, Long confernceId) throws JsonMappingException, JsonProcessingException;
-	Optional<CallForPapers> findByConferenceId(Long confernceId); 
-	boolean existsByConferenceId(Long confernceId);
+	Optional<CallForPapers> add(CallForPapersDto callForPapersDto, Long conferenceId) throws JsonProcessingException;
+	Optional<CallForPapers> findByConferenceId(Long conferenceId);
+	boolean existsByConferenceId(Long conferenceId);
 
 }
