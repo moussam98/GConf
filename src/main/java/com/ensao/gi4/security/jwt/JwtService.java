@@ -1,5 +1,6 @@
 package com.ensao.gi4.security.jwt;
 
+import com.ensao.gi4.security.token.TokenService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -11,10 +12,15 @@ import org.springframework.stereotype.Service;
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 @Service
-public record JwtService(JwtConfigurationProperties jwtConfigurationProperties) {
+public record JwtService(JwtConfigurationProperties jwtConfigurationProperties, TokenService tokenService) {
+
+    private static final String TOKEN_TYPE = "token_type";
+    private static final String ACCESS_TOKEN = "access";
+    private static final String REFRESH_TOKEN = "refresh";
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -25,7 +31,8 @@ public record JwtService(JwtConfigurationProperties jwtConfigurationProperties) 
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+    public String generateAccessToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        extraClaims.put(TOKEN_TYPE, ACCESS_TOKEN);
         return buildToken(extraClaims, userDetails, jwtConfigurationProperties.getTokenExpirationInMilliseconds());
     }
 
@@ -45,11 +52,12 @@ public record JwtService(JwtConfigurationProperties jwtConfigurationProperties) 
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        return (username.equals(userDetails.getUsername())) && isTokenNotExpired(token) &&
+               !tokenService.isRevoked(token);
     }
 
-    private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+    private boolean isTokenNotExpired(String token) {
+        return !extractExpiration(token).before(new Date());
     }
 
     private Date extractExpiration(String token) {
@@ -68,5 +76,24 @@ public record JwtService(JwtConfigurationProperties jwtConfigurationProperties) 
     private Key getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(jwtConfigurationProperties.getSecretKey());
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+
+    public String generateRefreshToken(UserDetails userDetails) {
+        return buildToken(Map.of(TOKEN_TYPE, REFRESH_TOKEN), userDetails,
+                jwtConfigurationProperties.getTokenRefreshExpirationInMilliseconds());
+    }
+
+    public boolean isRefreshTokenValid(String refreshToken, UserDetails userDetails) {
+        final String username = extractUsername(refreshToken);
+        return (username.equals(userDetails.getUsername())) &&
+               isTokenNotExpired(refreshToken) &&
+               isRefreshToken(refreshToken) &&
+               !tokenService.isRevoked(refreshToken);
+    }
+
+    private boolean isRefreshToken(String token) {
+        final Claims claims = extractAllClaims(token);
+        return Objects.equals(claims.get(TOKEN_TYPE, String.class), REFRESH_TOKEN);
     }
 }

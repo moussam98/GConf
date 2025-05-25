@@ -36,7 +36,7 @@ public class SecurityConfiguration {
                          .requestMatchers(HttpMethod.POST, "/api/v1/submission/add/**").permitAll()
                          .requestMatchers("/api/v*/submission/**").hasAuthority("ADMIN")
                          .requestMatchers("/api/v*/document/**").hasAuthority("ADMIN")
-                         .requestMatchers("/api/v*/auth/authenticate").permitAll()
+                         .requestMatchers("/api/v*/auth/**").permitAll()
                          .anyRequest().authenticated()
                  )
                  .addFilterAfter(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
