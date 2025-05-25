@@ -1,7 +1,8 @@
 package com.ensao.gi4.controller;
 
-import java.util.Optional;
-
+import com.ensao.gi4.model.Document;
+import com.ensao.gi4.service.api.DocumentService;
+import lombok.AllArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -12,10 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ensao.gi4.model.Document;
-import com.ensao.gi4.service.api.DocumentService;
-
-import lombok.AllArgsConstructor;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/document")
@@ -32,7 +30,7 @@ public class DocumentController {
 		
 			Document document = documentOptional.get();
 			return ResponseEntity.ok().contentType(MediaType.parseMediaType(document.getFileType()))
-					.header(HttpHeaders.CONTENT_DISPOSITION, "attachment:filemane=\"" + document.getFilename() + "\"" )
+					.header(HttpHeaders.CONTENT_DISPOSITION, "attachment:filename=\"" + document.getFilename() + "\"" )
 					.body(new ByteArrayResource(document.getData())); 
 		}else {
 			return new ResponseEntity<>(HttpStatus.BAD_REQUEST); 
@@ -42,13 +40,11 @@ public class DocumentController {
 	
 	@GetMapping("/content/{id}")
 	public ResponseEntity<Document> getDocument(@PathVariable Long id){
-		Optional<Document> documentOptional = documentService.findById(id); 
-		
-		if (documentOptional.isPresent()) {
-			return ResponseEntity.ok().body(documentOptional.get()); 
-		}else {
-			return ResponseEntity.badRequest().build(); 
-		}
+		Optional<Document> documentOptional = documentService.findById(id);
+
+        return documentOptional
+				.map(document -> ResponseEntity.ok()
+				.body(document)).orElseGet(() -> ResponseEntity.badRequest().build());
 	}
 
 }
