@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 @Service
-public record JwtService(JwtConfigurationProperties jwtConfigurationProperties, TokenService tokenService) {
+public record JwtService(JwtProperties jwtProperties, TokenService tokenService) {
 
     private static final String TOKEN_TYPE = "token_type";
     private static final String ACCESS_TOKEN = "access";
@@ -33,7 +33,7 @@ public record JwtService(JwtConfigurationProperties jwtConfigurationProperties, 
 
     public String generateAccessToken(Map<String, Object> extraClaims, UserDetails userDetails) {
         extraClaims.put(TOKEN_TYPE, ACCESS_TOKEN);
-        return buildToken(extraClaims, userDetails, jwtConfigurationProperties.getTokenExpirationInMilliseconds());
+        return buildToken(extraClaims, userDetails, jwtProperties.getTokenExpirationInMilliseconds());
     }
 
     private String buildToken(
@@ -74,14 +74,14 @@ public record JwtService(JwtConfigurationProperties jwtConfigurationProperties, 
     }
 
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtConfigurationProperties.getSecretKey());
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecretKey());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
 
     public String generateRefreshToken(UserDetails userDetails) {
         return buildToken(Map.of(TOKEN_TYPE, REFRESH_TOKEN), userDetails,
-                jwtConfigurationProperties.getTokenRefreshExpirationInMilliseconds());
+                jwtProperties.getTokenRefreshExpirationInMilliseconds());
     }
 
     public boolean isRefreshTokenValid(String refreshToken, UserDetails userDetails) {

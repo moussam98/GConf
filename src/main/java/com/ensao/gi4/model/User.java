@@ -14,7 +14,7 @@ import java.util.Collections;
 @Entity
 @Getter
 @Setter
-@Table(name = "AppUser")
+@Table(name = "users")
 public class User extends Person implements UserDetails {
 
 	private String password;
