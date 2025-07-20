@@ -28,15 +28,15 @@ public class SecurityConfiguration {
                  .sessionManagement(session ->
                          session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                  .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                         .requestMatchers("/api/v*/registration/**").permitAll()
-                         .requestMatchers("/api/v*/login/**").permitAll()
-                         .requestMatchers("/api/v*/user/**").hasAuthority("ADMIN")
-                         .requestMatchers("/api/v*/conference/**").hasAuthority("ADMIN")
-                         .requestMatchers("/api/v*/cfp/**").hasAuthority("ADMIN")
-                         .requestMatchers(HttpMethod.POST, "/api/v1/submission/add/**").permitAll()
-                         .requestMatchers("/api/v*/submission/**").hasAuthority("ADMIN")
-                         .requestMatchers("/api/v*/document/**").hasAuthority("ADMIN")
                          .requestMatchers("/api/v*/auth/**").permitAll()
+                         .requestMatchers(HttpMethod.POST, "/api/v*/users").permitAll()
+                         .requestMatchers(HttpMethod.POST, "/api/v*/users/*/submissions").permitAll()
+                         .requestMatchers("/api/v*/users/*/conferences").hasAuthority("ADMIN")
+                         .requestMatchers("/api/v*/users/**").hasAuthority("ADMIN")
+                         .requestMatchers("/api/v*/conferences/*/cfp/**").hasAuthority("ADMIN")
+                         .requestMatchers("/api/v*/conferences/**").hasAuthority("ADMIN")
+                         .requestMatchers("/api/v*/submissions/**").hasAuthority("ADMIN")
+                         .requestMatchers("/api/v*/documents/**").hasAuthority("ADMIN")
                          .anyRequest().authenticated()
                  )
                  .addFilterAfter(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

@@ -1,14 +1,5 @@
 package com.ensao.gi4.service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import jakarta.persistence.Tuple;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ensao.gi4.dto.ConferenceDto;
 import com.ensao.gi4.dto.ConferenceFirstInfoDto;
 import com.ensao.gi4.dto.mapper.Mapper;
@@ -19,8 +10,14 @@ import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.ConferenceRepository;
 import com.ensao.gi4.repository.UserRepository;
 import com.ensao.gi4.service.api.ConferenceService;
-
+import jakarta.persistence.Tuple;
 import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -80,11 +77,6 @@ public class ConferenceServiceImpl implements ConferenceService {
 	}
 
 	@Override
-	public boolean existsById(Long id) {
-		return conferenceRepository.existsById(id);
-	}
-
-	@Override
 	public Optional<Conference> updateConferenceById(Long id, ConferenceDto conferenceDto) {
 
 		Conference newConference = Mapper.toConference(conferenceDto);
@@ -100,9 +92,8 @@ public class ConferenceServiceImpl implements ConferenceService {
 	}
 
 	@Override
-	public Boolean deleteById(Long id) {
+	public void deleteById(Long id) {
 		conferenceRepository.deleteById(id);
-		return true;
 	}
 	
 	private void updateConference(Conference newConference, Conference updatedConference) {

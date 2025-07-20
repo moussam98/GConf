@@ -1,30 +1,22 @@
 package com.ensao.gi4.service.impl;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import jakarta.persistence.Tuple;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ensao.gi4.dto.SubmissionDto;
 import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.model.Document;
 import com.ensao.gi4.model.Submission;
 import com.ensao.gi4.model.User;
-import com.ensao.gi4.repository.AuthorRepository;
-import com.ensao.gi4.repository.ConferenceRepository;
-import com.ensao.gi4.repository.DocumentRepository;
-import com.ensao.gi4.repository.KeywordRepository;
-import com.ensao.gi4.repository.SubmissionRepository;
-import com.ensao.gi4.repository.UserRepository;
+import com.ensao.gi4.repository.*;
 import com.ensao.gi4.service.api.SubmissionService;
-
+import jakarta.persistence.Tuple;
 import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -70,11 +62,6 @@ public class SubmissionServiceImpl implements SubmissionService {
 		List<Submission> submissions = submissionsMapper(tuples);
 	
 		return Optional.of(submissions);
-	}
-
-	@Override
-	public Boolean existsById(Long id) {
-		return submissionRepository.existsById(id);
 	}
 
 	@Override

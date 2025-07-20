@@ -1,15 +1,13 @@
 package com.ensao.gi4.service.impl;
 
-import java.util.Optional;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.ensao.gi4.model.Document;
 import com.ensao.gi4.repository.DocumentRepository;
 import com.ensao.gi4.service.api.DocumentService;
-
 import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -27,6 +25,12 @@ public class DocumentServiceImpl implements DocumentService {
 	@Override
 	public Optional<Document> findById(Long fileId) {
 		return documentRepository.findById(fileId);
+	}
+
+	@Override
+	public Boolean deleteById(Long id) {
+		documentRepository.deleteById(id);
+		return true;
 	}
 
 }

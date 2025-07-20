@@ -2,49 +2,42 @@ package com.ensao.gi4.controller;
 
 import com.ensao.gi4.model.Document;
 import com.ensao.gi4.service.api.DocumentService;
-import lombok.AllArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Optional;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/document")
-@AllArgsConstructor
-public class DocumentController {
+@RequestMapping("/api/v1/documents")
+record DocumentController(DocumentService documentService)  {
 	
-	public final DocumentService documentService; 
-	
-	@GetMapping("/{documentId}")
-	public ResponseEntity<ByteArrayResource> getDocumentFile(@PathVariable Long documentId){
-		
-		Optional<Document> documentOptional = documentService.findById(documentId); 
-		if (documentOptional.isPresent()) {
-		
-			Document document = documentOptional.get();
-			return ResponseEntity.ok().contentType(MediaType.parseMediaType(document.getFileType()))
-					.header(HttpHeaders.CONTENT_DISPOSITION, "attachment:filename=\"" + document.getFilename() + "\"" )
-					.body(new ByteArrayResource(document.getData())); 
-		}else {
-			return new ResponseEntity<>(HttpStatus.BAD_REQUEST); 
-		}
+	@GetMapping("/{id}/content")
+	public ResponseEntity<ByteArrayResource> getDocumentFile(@PathVariable Long id){
+		return documentService.findById(id)
+				.map(document ->
+						ResponseEntity
+								.ok()
+								.contentType(MediaType.parseMediaType(document.getFileType()))
+								.header(HttpHeaders.CONTENT_DISPOSITION,
+										"attachment:filename=\"" + document.getFilename() + "\"" )
+								.body(new ByteArrayResource(document.getData())))
+				.orElse(ResponseEntity.notFound().build());
+
+
 		
 	}
 	
-	@GetMapping("/content/{id}")
+	@GetMapping("/{id}/metadata")
 	public ResponseEntity<Document> getDocument(@PathVariable Long id){
-		Optional<Document> documentOptional = documentService.findById(id);
+        return documentService.findById(id)
+				.map(ResponseEntity::ok)
+				.orElse(ResponseEntity.notFound().build());
+	}
 
-        return documentOptional
-				.map(document -> ResponseEntity.ok()
-				.body(document)).orElseGet(() -> ResponseEntity.badRequest().build());
+	@DeleteMapping("/{id}")
+	public ResponseEntity<Boolean> deleteDocument(@PathVariable Long id){
+		return ResponseEntity.ok(documentService.deleteById(id));
 	}
 
 }
