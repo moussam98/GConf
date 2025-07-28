@@ -1,25 +1,16 @@
 package com.ensao.gi4.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
+import com.ensao.gi4.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.http.MediaType;
 
-import com.ensao.gi4.model.Author;
-import com.ensao.gi4.model.Conference;
-import com.ensao.gi4.model.Document;
-import com.ensao.gi4.model.Keyword;
-import com.ensao.gi4.model.Submission;
+import java.time.LocalDate;
+import java.util.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 public class SubmissionRepositoryTest {
@@ -48,14 +39,14 @@ public class SubmissionRepositoryTest {
 
 		Author author = new Author();
 		Author author2 = new Author();
-		author.setFirstname("Ali");
-		author.setLastname("Moussa");
+		author.setFirstName("Ali");
+		author.setLastName("Moussa");
 		author.setEmail("ali@gmail.com");
 		author.setCountry("Niger");
 		author.setOrganization("EMIG");
 
-		author2.setFirstname("Anna");
-		author2.setLastname("Smith");
+		author2.setFirstName("Anna");
+		author2.setLastName("Smith");
 		author2.setEmail("anna@gmail.com");
 		author2.setCountry("United States");
 		author2.setOrganization("Silicon Valley");

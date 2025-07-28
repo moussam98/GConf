@@ -1,20 +1,5 @@
 package com.ensao.gi4.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDate;
-import java.util.Optional;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import com.ensao.gi4.dto.ConferenceDto;
 import com.ensao.gi4.dto.ConferenceFirstInfoDto;
 import com.ensao.gi4.dto.mapper.Mapper;
@@ -25,6 +10,18 @@ import com.ensao.gi4.repository.ConferenceRepository;
 import com.ensao.gi4.repository.UserRepository;
 import com.ensao.gi4.service.api.ConferenceService;
 import com.ensao.gi4.service.impl.ConferenceServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ConferenceServiceTest {
@@ -46,8 +43,8 @@ public class ConferenceServiceTest {
 
 		user = new User();
 		user.setId(1l);
-		user.setFirstname("Ali");
-		user.setLastname("Moussa");
+		user.setFirstName("Ali");
+		user.setLastName("Moussa");
 		user.setEmail("ali@gmail.com");
 		user.setRole(Role.ADMIN);
 

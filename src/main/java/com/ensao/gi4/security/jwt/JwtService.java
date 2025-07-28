@@ -31,19 +31,19 @@ public record JwtService(JwtProperties jwtProperties, TokenService tokenService)
         return claimsResolver.apply(claims);
     }
 
-    public String generateAccessToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+    public String generateAccessToken(Map<String, Object> extraClaims, String username) {
         extraClaims.put(TOKEN_TYPE, ACCESS_TOKEN);
-        return buildToken(extraClaims, userDetails, jwtProperties.getTokenExpirationInMilliseconds());
+        return buildToken(extraClaims, username, jwtProperties.getTokenExpirationInMilliseconds());
     }
 
     private String buildToken(
             Map<String, Object> extraClaims,
-            UserDetails userDetails,
+            String username,
             long expiration
     ) {
         return Jwts.builder()
                 .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
+                .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
@@ -79,14 +79,13 @@ public record JwtService(JwtProperties jwtProperties, TokenService tokenService)
     }
 
 
-    public String generateRefreshToken(UserDetails userDetails) {
-        return buildToken(Map.of(TOKEN_TYPE, REFRESH_TOKEN), userDetails,
+    public String generateRefreshToken(String username) {
+        return buildToken(Map.of(TOKEN_TYPE, REFRESH_TOKEN), username,
                 jwtProperties.getTokenRefreshExpirationInMilliseconds());
     }
 
-    public boolean isRefreshTokenValid(String refreshToken, UserDetails userDetails) {
-        final String username = extractUsername(refreshToken);
-        return (username.equals(userDetails.getUsername())) &&
+    public boolean isRefreshTokenValid(String refreshToken, String username) {
+        return (extractUsername(refreshToken).equals(username)) &&
                isTokenNotExpired(refreshToken) &&
                isRefreshToken(refreshToken) &&
                !tokenService.isRevoked(refreshToken);

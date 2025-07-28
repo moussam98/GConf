@@ -1,24 +1,25 @@
 package com.ensao.gi4.controller;
 
-import com.ensao.gi4.dto.UserDto;
-import com.ensao.gi4.model.User;
-import com.ensao.gi4.service.api.RegistrationService;
+import com.ensao.gi4.dto.UserPatchDto;
+import com.ensao.gi4.dto.UserRequestDto;
+import com.ensao.gi4.dto.UserResponseDto;
 import com.ensao.gi4.service.api.UserService;
+import com.ensao.gi4.utils.MessageSourceUtils;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/users")
-record UserController(UserService userService, RegistrationService registrationService) {
+record UserController(UserService userService,
+                      MessageSourceUtils messageSourceUtils) {
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        Optional<User> user = userService.findById(id);
-        return user.map(ResponseEntity::ok)
+    public ResponseEntity<UserResponseDto> getUserById(@PathVariable Long id) {
+        return userService.findById(id).map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -27,47 +28,35 @@ record UserController(UserService userService, RegistrationService registrationS
         return (email != null) ? getUserByEmail(email) : getUsers();
     }
 
-    private ResponseEntity<User> getUserByEmail(String email) {
+    private ResponseEntity<UserResponseDto> getUserByEmail(String email) {
         return userService.findByEmail(email)
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.noContent().build());
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    private ResponseEntity<List<User>> getUsers() {
-        return userService.findAll()
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
-
+    private ResponseEntity<List<UserResponseDto>> getUsers() {
+        return ResponseEntity.ok(userService.findAll());
     }
 
     @DeleteMapping("{email}")
     public ResponseEntity<String> deleteUserByEmail(@PathVariable String email) {
         if (userService.deleteByEmail(email) == 1) {
-            return ResponseEntity.ok("User deleted !");
+            return ResponseEntity.ok(messageSourceUtils
+                    .getMessage("organizer.account.deleted", new Object[]{email}));
         }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(messageSourceUtils.getMessage("organizer.account.not_found"));
     }
 
-    @PutMapping("{email}")
-    public ResponseEntity<String> updateUserByEmail(@PathVariable String email, @RequestBody UserDto userDto) {
-        if (userService.update(userDto, email)) {
-            return ResponseEntity.ok("User updated successfully");
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    @PatchMapping("{email}")
+    public ResponseEntity<Object> updateUserByEmail(@PathVariable String email,
+                                                    @Valid @RequestBody UserPatchDto userPatchDto) {
+        return ResponseEntity.ok(userService.update(userPatchDto, email));
     }
 
     @PostMapping
-    public ResponseEntity<String> register(@RequestBody UserDto userDto) {
-
-        String result = registrationService.register(userDto);
-        if ("-1".equals(result)) {
-            return ResponseEntity.badRequest().body("Email already taken");
-        } else if ("-2".equals(result)) {
-            return ResponseEntity.badRequest().body("Invalid email");
-        } else {
-            return ResponseEntity.ok().body(result);
-        }
+    public ResponseEntity<UserResponseDto> register(@Valid @RequestBody UserRequestDto userDto) {
+        return ResponseEntity.ok(userService.register(userDto));
     }
 
 }

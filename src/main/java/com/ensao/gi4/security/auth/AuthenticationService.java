@@ -1,6 +1,8 @@
 package com.ensao.gi4.security.auth;
 
-import com.ensao.gi4.model.User;
+import com.ensao.gi4.dto.UserResponseDto;
+import com.ensao.gi4.dto.mapper.Mapper;
+import com.ensao.gi4.model.Role;
 import com.ensao.gi4.security.jwt.JwtService;
 import com.ensao.gi4.security.token.InvalidTokenException;
 import com.ensao.gi4.security.token.Token;
@@ -10,10 +12,10 @@ import com.ensao.gi4.service.api.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,32 +32,32 @@ public class AuthenticationService {
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         var authenticationToken = new UsernamePasswordAuthenticationToken(request.email(), request.password());
         authenticationManager.authenticate(authenticationToken);
-        User user = fetchUserByEmail(request.email());
-        Map<String, Object> claims = getUserClaims(user);
-        var jwtToken = jwtService.generateAccessToken(claims, user);
-        var refreshToken = jwtService.generateRefreshToken(user);
-        saveUserTokens(user, jwtToken, refreshToken);
+        UserResponseDto userResponseDto = fetchUserByEmail(request.email());
+        Map<String, Object> claims = getUserClaims(userResponseDto.role());
+        var jwtToken = jwtService.generateAccessToken(claims, userResponseDto.email());
+        var refreshToken = jwtService.generateRefreshToken(userResponseDto.email());
+        saveUserTokens(userResponseDto, jwtToken, refreshToken);
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
                 .build();
     }
 
-    private User fetchUserByEmail(String email) {
+    private UserResponseDto fetchUserByEmail(String email) {
         return userService.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
 
-    private static Map<String, Object> getUserClaims(User user) {
-        List<String> roles = user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+    private static Map<String, Object> getUserClaims(Role role) {
+        List<Role> roles = Collections.singletonList(role);
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", roles);
         return claims;
     }
 
-    private void saveUserToken(User user, String jwtToken, TokenType tokenType) {
+    private void saveUserToken(UserResponseDto userResponseDto, String jwtToken, TokenType tokenType) {
         var token = Token.builder()
-                .user(user)
+                .user(Mapper.toUser(userResponseDto))
                 .token(jwtToken)
                 .tokenType(tokenType)
                 .expired(false)
@@ -69,10 +71,9 @@ public class AuthenticationService {
 
         if (userEmail != null) {
             var user = fetchUserByEmail(userEmail);
-
-            if (jwtService.isRefreshTokenValid(request.refreshToken(), user)) {
-                var accessToken = jwtService.generateAccessToken(getUserClaims(user), user);
-                var refreshTokenRotation = jwtService.generateRefreshToken(user);
+            if (jwtService.isRefreshTokenValid(request.refreshToken(), user.email())) {
+                var accessToken = jwtService.generateAccessToken(getUserClaims(user.role()), user.email());
+                var refreshTokenRotation = jwtService.generateRefreshToken(user.email());
                 saveUserTokens(user, accessToken, refreshTokenRotation);
                 return AuthenticationResponse.builder()
                         .accessToken(accessToken)
@@ -83,10 +84,10 @@ public class AuthenticationService {
         throw new InvalidTokenException("Invalid refresh token");
     }
 
-    private void saveUserTokens(User user, String accessToken, String refreshToken) {
-        tokenService.revokeAllUserTokens(user);
-        saveUserToken(user, accessToken, TokenType.ACCESS);
-        saveUserToken(user, refreshToken, TokenType.REFRESH);
+    private void saveUserTokens(UserResponseDto userResponseDto, String accessToken, String refreshToken) {
+        tokenService.revokeAllUserTokens(userResponseDto.id());
+        saveUserToken(userResponseDto, accessToken, TokenType.ACCESS);
+        saveUserToken(userResponseDto, refreshToken, TokenType.REFRESH);
     }
 
 

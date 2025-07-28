@@ -1,13 +1,13 @@
 package com.ensao.gi4.service.impl;
 
 import com.ensao.gi4.dto.SubmissionDto;
+import com.ensao.gi4.dto.UserResponseDto;
 import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.model.Document;
 import com.ensao.gi4.model.Submission;
-import com.ensao.gi4.model.User;
-import com.ensao.gi4.repository.*;
-import com.ensao.gi4.service.api.SubmissionService;
+import com.ensao.gi4.repository.SubmissionRepository;
+import com.ensao.gi4.service.api.*;
 import jakarta.persistence.Tuple;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,23 +24,17 @@ import java.util.Optional;
 public class SubmissionServiceImpl implements SubmissionService {
 
 	private final SubmissionRepository submissionRepository;
-	private final ConferenceRepository conferenceRepository;
-	private final KeywordRepository keywordRepository;
-	private final DocumentRepository documentRepository;
-	private final AuthorRepository authorRepository;
-	private final UserRepository userRepository; 
+	private final ConferenceService conferenceService;
+	private final KeywordService keywordService;
+	private final DocumentService documentService;
+	private final AuthorsService authorService;
+	private final UserService userService;
 
 	@Override
 	public Long add(SubmissionDto submissionDto, Long userId) throws IOException {
-
-		Optional<User> optionalUser = userRepository.findById(userId); 
-
-		if (optionalUser .isPresent() ) {
-			return saveSubmissionIfConferenceExists(submissionDto, optionalUser.get() );
-		}
-		else {
-			return -1L;
-		}
+		return userService.findById(userId)
+				.map(user -> saveSubmissionIfConferenceExists(user, submissionDto))
+				.orElse(-1L);
 	}
 
 	@Override
@@ -131,23 +125,25 @@ public class SubmissionServiceImpl implements SubmissionService {
 		return document;
 	}
 	
-	private Long saveSubmissionIfConferenceExists(SubmissionDto submissionDto, User user) throws IOException{
-		Optional<Conference> conferenceOptional = conferenceRepository.findByUser(user);
-		
-		if (conferenceOptional.isPresent()) {	
-			Submission submission = saveSubmission(submissionDto, conferenceOptional);
-			return submission.getId();
-		}
-		return -1L;
+	private Long saveSubmissionIfConferenceExists(UserResponseDto userResponseDto, SubmissionDto submissionDto){
+		return conferenceService.findByUser(userResponseDto.id())
+				.map(conference -> {
+                    try {
+                        return saveSubmission(conference, submissionDto).getId();
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Error while saving submission", e);
+                    }
+                })
+				.orElse(-1L);
 	}
 
-	private Submission saveSubmission(SubmissionDto submissionDto, Optional<Conference> conferenceOptional)
+	private Submission saveSubmission(Conference conference,  SubmissionDto submissionDto)
 			throws IOException {
 		Submission submission = Mapper.toSubmission(submissionDto);
-		keywordRepository.saveAll(submission.getKeywords());
-		documentRepository.save(submission.getDocument());
-		conferenceOptional.ifPresent(submission::setConference);
-		authorRepository.saveAll(submission.getAuthors());
+		keywordService.addAll(submission.getKeywords());
+		documentService.add(submission.getDocument());
+		submission.setConference(conference);
+		authorService.addAll(submission.getAuthors());
 		submissionRepository.save(submission);
 		return submission;
 	}

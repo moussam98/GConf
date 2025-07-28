@@ -1,5 +1,11 @@
 package com.ensao.gi4.dto.mapper;
 
+import com.ensao.gi4.dto.*;
+import com.ensao.gi4.model.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -7,30 +13,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.ensao.gi4.dto.CallForPapersDto;
-import com.ensao.gi4.dto.ConferenceDto;
-import com.ensao.gi4.dto.ConferenceFirstInfoDto;
-import com.ensao.gi4.dto.SubmissionDto;
-import com.ensao.gi4.dto.UserDto;
-import com.ensao.gi4.model.Author;
-import com.ensao.gi4.model.CallForPapers;
-import com.ensao.gi4.model.Conference;
-import com.ensao.gi4.model.Document;
-import com.ensao.gi4.model.Keyword;
-import com.ensao.gi4.model.Submission;
-import com.ensao.gi4.model.User;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+// TODO: find a new way to map a bean DTO. Use a library
 public class Mapper {
 
-	private static ObjectMapper objectMapper = new ObjectMapper();
+	private static final ObjectMapper objectMapper = new ObjectMapper();
 
 	public static Submission toSubmission(SubmissionDto submissionDto) throws IOException {
-		Submission submission = submissionMapper(submissionDto);
-		return submission;
+        return submissionMapper(submissionDto);
 	}
 	
 	public static Conference firstInfoToConference(ConferenceFirstInfoDto conferenceFirstInfoDto) {
@@ -43,18 +32,32 @@ public class Mapper {
 	}
 
 	public static Conference toConference(ConferenceDto conferenceDto) {
-		Conference conference = conferenceMapper(conferenceDto);
-		return conference;
+        return conferenceMapper(conferenceDto);
 	}
 
-	public static User toUser(UserDto userDto) {
-		User user = userMapper(userDto);
+	public static User toUser(UserRequestDto userDto) {
+        return userMapper(userDto);
+	}
+
+	public static UserResponseDto toUserDto(User user) {
+		var conferenceId= user.getConference() != null ? user.getConference().getId():null;
+        return new UserResponseDto(user.getId(), user.getFirstName(), user.getLastName(),
+				user.getEmail(), user.getRole(), user.getCreatedAt(), user.getUpdatedAt(),
+				conferenceId);
+	}
+
+	public static User toUser(UserResponseDto userResponseDto) {
+		User user = new User();
+		user.setId(userResponseDto.id());
+		user.setFirstName(userResponseDto.firstName().trim());
+		user.setLastName(userResponseDto.lastName().trim());
+		user.setEmail(userResponseDto.email().trim());
+		user.setRole(userResponseDto.role());
 		return user;
 	}
 
-	public static CallForPapers toCallForPapers(CallForPapersDto callForPapersDto) throws JsonMappingException, JsonProcessingException {
-		CallForPapers callForPapers = callForPapersMapper(callForPapersDto);
-		return callForPapers;
+	public static CallForPapers toCallForPapers(CallForPapersDto callForPapersDto) {
+        return callForPapersMapper(callForPapersDto);
 	}
 
 	private static CallForPapers callForPapersMapper(CallForPapersDto callForPapersDto) {
@@ -67,13 +70,12 @@ public class Mapper {
 		return callForPapers;
 	}
 	
-	private static User userMapper(UserDto userDto) {
+	private static User userMapper(UserRequestDto userDto) {
 		User user = new User();
-	
-		user.setFirstname(userDto.getFirstname().trim());
-		user.setLastname(userDto.getLastname().trim());
-		user.setEmail(userDto.getEmail().trim());
-		user.setPassword(userDto.getPassword().trim());
+		user.setFirstName(userDto.firstName().trim());
+		user.setLastName(userDto.lastName().trim());
+		user.setEmail(userDto.email().trim());
+		user.setPassword(userDto.password().trim());
 		return user;
 	}
 	
@@ -98,17 +100,14 @@ public class Mapper {
 	private static LocalDate getDate(String date) {
 		String[] splitDate = date.split("/");
 		
-		Integer year = Integer.valueOf(splitDate[2]);
-		Integer month = Integer.valueOf(splitDate[1]);
-		Integer dayOfMonth = Integer.valueOf(splitDate[0]);
-		
-		LocalDate localDate = LocalDate.of(year, month, dayOfMonth);
+		int year = Integer.parseInt(splitDate[2]);
+		int month = Integer.parseInt(splitDate[1]);
+		int dayOfMonth = Integer.parseInt(splitDate[0]);
 
-		return localDate;
+        return LocalDate.of(year, month, dayOfMonth);
 	}
 	
-	private static Submission submissionMapper(SubmissionDto submissionDto)
-			throws JsonProcessingException, JsonMappingException, IOException {
+	private static Submission submissionMapper(SubmissionDto submissionDto) throws IOException {
 		
 		Submission submission = new Submission();
 		
@@ -128,15 +127,12 @@ public class Mapper {
 		return document;
 	}
 
-	private static List<Author> getAuthors(SubmissionDto submissionDto)
-			throws JsonProcessingException, JsonMappingException {
-		List<Author> authorsSubmission = objectMapper.reader().forType(new TypeReference<List<Author>>() {
-		}).readValue(submissionDto.getAuthors());
- 		return authorsSubmission;
+	private static List<Author> getAuthors(SubmissionDto submissionDto) throws JsonProcessingException {
+        return objectMapper.reader().forType(new TypeReference<List<Author>>() {
+        }).readValue(submissionDto.getAuthors());
 	}
 
-	private static Set<Keyword> getKeywords(SubmissionDto submissionDto)
-			throws JsonProcessingException, JsonMappingException { 
+	private static Set<Keyword> getKeywords(SubmissionDto submissionDto) {
 		String[] data = submissionDto.getKeywords().split("\n");
 		Set<Keyword> keywordSubmission = new HashSet<>(); 
 		Arrays.stream(data).forEach((keyword -> keywordSubmission.add(new Keyword(null, keyword.trim()))));

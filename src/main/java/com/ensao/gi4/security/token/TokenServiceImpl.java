@@ -1,18 +1,13 @@
 package com.ensao.gi4.security.token;
 
-import com.ensao.gi4.model.User;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
-public class TokenServiceImpl implements TokenService {
-
-    private final TokenRepository tokenRepository;
+public record TokenServiceImpl(TokenRepository tokenRepository) implements TokenService {
 
     @Override
-    public void revokeAllUserTokens(User user) {
-        var validUserTokens = tokenRepository.findAllValidTokenByUser(user.getId());
+    public void revokeAllUserTokens(Long userId) {
+        var validUserTokens = tokenRepository.findAllValidTokenByUser(userId);
         if (validUserTokens.isEmpty())
             return;
         validUserTokens.forEach(token -> {

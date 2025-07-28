@@ -3,12 +3,13 @@ package com.ensao.gi4.controller;
 import com.ensao.gi4.dto.ConferenceDto;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.service.api.ConferenceService;
+import com.ensao.gi4.utils.MessageSourceUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/conferences")
-record ConferenceController(ConferenceService conferenceService) {
+record ConferenceController(ConferenceService conferenceService, MessageSourceUtils messageSourceUtils) {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<Conference> getConferenceById(@PathVariable Long id){
@@ -51,7 +52,7 @@ record ConferenceController(ConferenceService conferenceService) {
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteConferenceById(@PathVariable Long id){
 		conferenceService.deleteById(id);
-		return  ResponseEntity.ok().build();
+		return  ResponseEntity.ok(messageSourceUtils.getMessage("organizer.conference.deleted"));
 	}
 
 }
