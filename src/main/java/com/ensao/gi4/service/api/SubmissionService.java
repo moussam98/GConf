@@ -1,6 +1,6 @@
 package com.ensao.gi4.service.api;
 
-import com.ensao.gi4.dto.SubmissionDto;
+import com.ensao.gi4.dto.SubmissionRequestDto;
 import com.ensao.gi4.model.Submission;
 
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface SubmissionService {
 	
-	Long add(SubmissionDto submissionDto, Long userId) throws IOException; 
+	Long add(SubmissionRequestDto submissionRequestDto, Long userId) throws IOException;
 	Optional<Submission> findById(Long id); 
 	Optional<List<Submission>> findAllSubmission(); 
 	Boolean evaluateSubmission(Long submissionId, Boolean isValidate);

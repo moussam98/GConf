@@ -1,5 +1,6 @@
 package com.ensao.gi4.model;
 
+import com.ensao.gi4.repository.StringSetConverter;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -21,8 +22,9 @@ public class CallForPapers {
 	@JsonManagedReference
 	private Conference conference; 
 	private LocalDate startDate; 
-	private LocalDate endDate; 
-	@OneToMany
-	Set<Topic> topics = new HashSet<>(); 
+	private LocalDate endDate;
+	@Convert(converter = StringSetConverter.class)
+	@Column(name = "topics", nullable = false)
+	Set<String> topics = new HashSet<>();
 	private String guidelines; 
 }

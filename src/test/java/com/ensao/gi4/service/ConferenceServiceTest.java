@@ -1,15 +1,19 @@
 package com.ensao.gi4.service;
 
 import com.ensao.gi4.dto.ConferenceDto;
-import com.ensao.gi4.dto.ConferenceFirstInfoDto;
+import com.ensao.gi4.dto.ConferencePatchDto;
+import com.ensao.gi4.dto.ConferenceRequestDto;
+import com.ensao.gi4.dto.UserDto;
 import com.ensao.gi4.dto.mapper.Mapper;
+import com.ensao.gi4.model.CallForPapers;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.model.Role;
 import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.ConferenceRepository;
-import com.ensao.gi4.repository.UserRepository;
 import com.ensao.gi4.service.api.ConferenceService;
+import com.ensao.gi4.service.api.UserService;
 import com.ensao.gi4.service.impl.ConferenceServiceImpl;
+import com.ensao.gi4.utils.MessageSourceUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,10 +21,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,171 +37,244 @@ public class ConferenceServiceTest {
 	@Mock
 	private ConferenceRepository conferenceRepository;
 	@Mock
-	private UserRepository userRepository;
+	private UserService userService;
+	@Mock
+	private MessageSourceUtils messageSourceUtils;
 	private ConferenceService underTest;
 	private Conference conference;
-	private User user;
+	private User owner;
+	private UserDto userDto;
+	private ConferenceRequestDto conferenceRequestDto;
+	private CallForPapers callForPapers;
 
-	@BeforeEach
+    @BeforeEach
 	void setUp() {
-		underTest = new ConferenceServiceImpl(conferenceRepository, userRepository);
-		conference = new Conference("International Confernce", "GConf", "UMP", "Oujda", "Morrocco", LocalDate.now(),
-				LocalDate.of(2022, 8, 30), "Computer Science", "Artificial Intelligence", "organizeName");
-		conference.setId(1l);
-
-		user = new User();
-		user.setId(1l);
-		user.setFirstName("Ali");
-		user.setLastName("Moussa");
-		user.setEmail("ali@gmail.com");
-		user.setRole(Role.ADMIN);
-
+		underTest = new ConferenceServiceImpl(conferenceRepository, userService, messageSourceUtils);
+        conferenceRequestDto = createConferenceRequestDto();
+		conference = createConference();
+        owner = createUser();
+		conference.setOwner(owner);
+		callForPapers = createCallForPapers();
+		conference.setCallForPapers(callForPapers);
+		userDto = Mapper.toUserDto(owner);
 	}
 
 	@Test
 	void shouldAddConference() {
 		// given
-		ConferenceFirstInfoDto conferenceDto = new ConferenceFirstInfoDto();
-		conferenceDto.setName("International Confernce");
-		conferenceDto.setAcronym("GConf");
-
-		Conference conference = Mapper.firstInfoToConference(conferenceDto);
-		conference.setUser(user);
+		Conference conference = Mapper.toConference(conferenceRequestDto);
+		Long userId = 1L;
 
 		Conference savedconference = new Conference();
-		savedconference.setName("International Confernce");
+		savedconference.setName("International Conference");
 		savedconference.setAcronym("GConf");
-		savedconference.setId(1l);
-		savedconference.setUser(user);
+		savedconference.setId(1L);
+		savedconference.setOwner(owner);
 
 		// when
-		when(conferenceRepository.existsByName(conference.getName())).thenReturn(false);
-		when(conferenceRepository.existsByAcronym(conference.getAcronym())).thenReturn(false);
-		when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-		when(conferenceRepository.save(conference)).thenReturn(savedconference);
+		when(conferenceRepository.existsByNameAndAcronym(conference.getName(),conference.getAcronym()))
+				.thenReturn(false);
+		when(userService.findById(userId)).thenReturn(Optional.of(userDto));
+		when(conferenceRepository.save(any())).thenReturn(savedconference);
 
-		ArgumentCaptor<Conference> conferenceArgumentCaptor = ArgumentCaptor.forClass(Conference.class);
 		ArgumentCaptor<String> currentStringArgumentCaptor = ArgumentCaptor.forClass(String.class);
+		var acronymArgumentCaptor = ArgumentCaptor.forClass(String.class);
 		ArgumentCaptor<Long> userIdArgumentCaptor = ArgumentCaptor.forClass(Long.class);
 
-		Long result = underTest.add(conferenceDto, user.getId());
+		ConferenceDto result = underTest.add(conferenceRequestDto, owner.getId());
 
 		// then
-		assertThat(result).isEqualTo(savedconference.getId());
-		verify(conferenceRepository, times(1)).save(conferenceArgumentCaptor.capture());
-		assertThat(conferenceArgumentCaptor.getValue()).isEqualTo(conference);
+		assertThat(result.id()).isEqualTo(savedconference.getId());
+		assertThat(result.name()).isEqualTo(savedconference.getName());
+		assertThat(result.acronym()).isEqualTo(savedconference.getAcronym());
 
-		verify(conferenceRepository, times(1)).existsByName(currentStringArgumentCaptor.capture());
+		verify(conferenceRepository, times(1)).existsByNameAndAcronym(
+				currentStringArgumentCaptor.capture(), acronymArgumentCaptor.capture());
 		assertThat(currentStringArgumentCaptor.getValue()).isEqualTo(conference.getName());
+		assertThat(acronymArgumentCaptor.getValue()).isEqualTo(conference.getAcronym());
 
-		verify(conferenceRepository, times(1)).existsByAcronym(currentStringArgumentCaptor.capture());
-		assertThat(currentStringArgumentCaptor.getValue()).isEqualTo(conference.getAcronym());
-
-		verify(userRepository, times(1)).findById(userIdArgumentCaptor.capture());
-		assertThat(userIdArgumentCaptor.getValue()).isEqualTo(user.getId());
+		verify(userService, times(1)).findById(userIdArgumentCaptor.capture());
+		assertThat(userIdArgumentCaptor.getValue()).isEqualTo(owner.getId());
 	}
 
 	@Test
 	void shouldNotAddConferenceIfExists() {
-		// given
-		ConferenceFirstInfoDto conferenceDto = new ConferenceFirstInfoDto();
-		conferenceDto.setName("International Confernce");
-		conferenceDto.setAcronym("GConf");
-
 		// when
-		when(conferenceRepository.existsByName(conference.getName())).thenReturn(true);
-		when(conferenceRepository.existsByAcronym(conference.getAcronym())).thenReturn(true);
-		Long result = underTest.add(conferenceDto, user.getId());
+		when(conferenceRepository.existsByNameAndAcronym(conference.getName(),conference.getAcronym())).thenReturn(true);
 
 		// then
-		assertThat(result).isEqualTo(-1);
+		assertThatThrownBy(() -> underTest.add(conferenceRequestDto, owner.getId()))
+				.isInstanceOf(IllegalStateException.class);
 	}
 
 	@Test
 	void shouldReturnConferenceIfExists() {
-		// when
-		when(conferenceRepository.findByName(conference.getName())).thenReturn(Optional.of(conference));
-		Optional<Conference> optionalConference = underTest.findByName(conference.getName());
-		ArgumentCaptor<String> conferenceNameArgumentCaptor = ArgumentCaptor.forClass(String.class);
+        // Given
+        var conferenceDto = Mapper.toConferenceDto(conference);
+		var conferenceProjection = new ConferenceProjectionImpl(conference);
+        // when
+        Long conferenceId = 1L;
+		when(conferenceRepository.findConferenceById(conferenceId)).thenReturn(Optional.of(conferenceProjection));
+		Optional<ConferenceDto> optionalConference = underTest.findById(conferenceId);
+		ArgumentCaptor<Long> conferenceIdArgumentCaptor = ArgumentCaptor.forClass(Long.class);
 
 		// then
 		assertThat(optionalConference).isNotEmpty();
-		assertThat(optionalConference).hasValue(conference);
-		verify(conferenceRepository, times(1)).findByName(conferenceNameArgumentCaptor.capture());
-		assertThat(conferenceNameArgumentCaptor.getValue()).isEqualTo(conference.getName());
+		assertThat(optionalConference).hasValue(conferenceDto);
+		verify(conferenceRepository, times(1)).findConferenceById(conferenceIdArgumentCaptor.capture());
+		assertThat(conferenceIdArgumentCaptor.getValue()).isEqualTo(conference.getId());
 	}
 
 	@Test
 	void shouldReturnEmptyIfConferenceDoesNotExists() {
 		// when
-		when(conferenceRepository.findByAcronym(conference.getAcronym())).thenReturn(Optional.empty());
-		Optional<Conference> expectedConference = underTest.findByAcronym(conference.getAcronym());
-		ArgumentCaptor<String> conferenceAcronymArgumentCaptor = ArgumentCaptor.forClass(String.class);
+        Long conferenceId = 1L;
+		when(conferenceRepository.findConferenceById(conferenceId)).thenReturn(Optional.empty());
+		Optional<ConferenceDto> expectedConference = underTest.findById(conferenceId);
+		ArgumentCaptor<Long> conferenceIdArgumentCaptor = ArgumentCaptor.forClass(Long.class);
 
 		// then
 		assertThat(expectedConference).isEmpty();
-		verify(conferenceRepository, times(1)).findByAcronym(conferenceAcronymArgumentCaptor.capture());
-		assertThat(conferenceAcronymArgumentCaptor.getValue()).isEqualTo(conference.getAcronym());
+		verify(conferenceRepository, times(1)).findConferenceById(conferenceIdArgumentCaptor.capture());
+		assertThat(conferenceIdArgumentCaptor.getValue()).isEqualTo(conference.getId());
 	}
 
 	@Test
 	void shouldUpdateConferenceById() {
-		// given
-
-		ConferenceDto conferenceDto = new ConferenceDto();
-		conferenceDto.setName("International Confernce");
-		conferenceDto.setAcronym("GConf");
-		conferenceDto.setVenue("UMP");
-		conferenceDto.setCity("Oujda");
-		conferenceDto.setCountry("Morocco");
-		conferenceDto.setFirstDay("10/10/2022");
-		conferenceDto.setLastDay("13/10/2022");
-		conferenceDto.setPrimaryArea("Computer Science");
-		conferenceDto.setSecondaryArea("Artificial Intelligence");
-		conferenceDto.setOrganizer("organizeName");
-		conferenceDto.setPhoneNumber("+55121131");
-		conferenceDto.setOtherInfo("Other info");
-
-		// when
-		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.of(conference));
+        // Given
+        var conferencePatchDto = createConferencePatchDto();
+        var conferenceDto = createConferenceDto();
+		Long conferenceId = 1L;
+        // when
+		when(conferenceRepository.findById(conferenceId)).thenReturn(Optional.of(conference));
+		when(conferenceRepository.save(conference)).thenReturn(conference);
 		ArgumentCaptor<Long> idArgumentCaptor = ArgumentCaptor.forClass(Long.class);
 
-		Optional<Conference> optionalConference = underTest.updateConferenceById(conference.getId(), conferenceDto);
+		Optional<ConferenceDto> optionalConference = underTest.updateConferenceById(conferenceId, conferencePatchDto);
 
 		// then
 		verify(conferenceRepository, times(1)).findById(idArgumentCaptor.capture());
 		assertThat(idArgumentCaptor.getValue()).isEqualTo(conference.getId());
 		assertThat(optionalConference).isNotEmpty();
-		assertThat(optionalConference).hasValue(conference);
+		assertThat(optionalConference)
+				.isPresent()
+				.hasValueSatisfying( conf -> {
+					assertThat(conf.name()).isEqualTo(conference.getName());
+					assertThat(conf.city()).isEqualTo(conference.getCity());
+					assertThat(conf.callForPapers()).isEqualTo(Mapper.toCallForPapersDto(conference.getCallForPapers()));
+				});
 	}
 
-	@Test
+    @Test
 	void shouldNoUpdateConferenceIfDoesNotExists() {
-		// given
-
-		ConferenceDto conferenceDto = new ConferenceDto();
-		conferenceDto.setName("International Confernce");
-		conferenceDto.setAcronym("GConf");
-		conferenceDto.setVenue("UMP");
-		conferenceDto.setCity("Oujda");
-		conferenceDto.setCountry("Morocco");
-		conferenceDto.setFirstDay("10/10/2022");
-		conferenceDto.setLastDay("13/10/2022");
-		conferenceDto.setPrimaryArea("Computer Science");
-		conferenceDto.setSecondaryArea("Artificial Intelligence");
-		conferenceDto.setOrganizer("organizeName");
-		conferenceDto.setPhoneNumber("+55121131");
-		conferenceDto.setOtherInfo("Other info");
-
+        // Given
+        var conferencePatchDto =  createConferencePatchDto();
 		// when
 		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.empty());
 		ArgumentCaptor<Long> idArgumentCaptor = ArgumentCaptor.forClass(Long.class);
-		Optional<Conference> optionalConference = underTest.updateConferenceById(conference.getId(), conferenceDto);
-		
+		Optional<ConferenceDto> optionalConference = underTest.updateConferenceById(conference.getId(), conferencePatchDto);
+
 		// then
 		verify(conferenceRepository, times(1)).findById(idArgumentCaptor.capture());
 		assertThat(idArgumentCaptor.getValue()).isEqualTo(conference.getId());
 		assertThat(optionalConference).isEmpty();
 	}
+
+	private CallForPapers createCallForPapers() {
+		var callForPapers  =new CallForPapers();
+		callForPapers.setConference(conference);
+		callForPapers.setId(1L);
+		callForPapers.setStartDate(LocalDate.now());
+		callForPapers.setEndDate(LocalDate.now());
+		callForPapers.setGuidelines("Call for papers guidelines");
+		callForPapers.setTopics(Set.of("Machine learning"));
+		return callForPapers;
+	}
+
+    private User createUser() {
+        owner = new User();
+        owner.setId(1L);
+        owner.setFirstName("Ali");
+        owner.setLastName("Moussa");
+        owner.setEmail("ali@gmail.com");
+        owner.setRole(Role.ADMIN);
+        return owner;
+    }
+
+    private Conference createConference() {
+        var conference =  new Conference(
+                "International Conference",
+                "GConf",
+                "UMP",
+                "Oujda",
+                "Morocco",
+                LocalDate.now(),
+                LocalDate.of(2022, 8, 30),
+                "Computer Science",
+                "Artificial Intelligence",
+                "organizeName");
+        conference.setId(1L);
+		conference.setCreatedAt(Instant.now());
+		conference.setUpdatedAt(Instant.now());
+		conference.setCallForPapers(callForPapers);
+        return conference;
+    }
+
+
+    private static ConferenceRequestDto createConferenceRequestDto() {
+        return new ConferenceRequestDto(
+                "International Conference",
+                "GConf",
+                "UMP",
+                "Oujda",
+                "Morocco",
+                LocalDate.now(),
+                LocalDate.now().plusDays(2),
+                "Computer Science",
+                "Artificial Intelligence",
+                "organizeName",
+                "+55121131",
+                "Other info"
+        );
+    }
+
+    private static ConferenceDto createConferenceDto() {
+        return new ConferenceDto(
+                1L,
+                "International Conference",
+                "GConf",
+                "UMP",
+                "Oujda",
+                "Morocco",
+                LocalDate.now(),
+                LocalDate.now().plusDays(2),
+                "Computer Science",
+                "Artificial Intelligence",
+                "organizeName",
+                "+55121131",
+                "Other info",
+                Collections.emptyList(),
+                new UserDto(1L, "Ali", "Moussa", "ali@gmail.com",
+                        Role.ADMIN, Instant.now(), Instant.now()),
+                null,
+                Instant.now(),
+                Instant.now()
+        );
+    }
+
+    private static ConferencePatchDto createConferencePatchDto() {
+        return new ConferencePatchDto(
+                "UMP",
+                "Oujda",
+                "Morocco",
+                LocalDate.now(),
+                LocalDate.now().plusDays(2),
+                "Computer Science",
+                "Artificial Intelligence",
+                "organizeName",
+                "+55121131",
+                "Other info"
+        );
+    }
 
 }

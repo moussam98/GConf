@@ -1,13 +1,12 @@
 package com.ensao.gi4.service.impl;
 
-import com.ensao.gi4.dto.CallForPapersDto;
+import com.ensao.gi4.dto.CallForPapersRequestDto;
 import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.CallForPapers;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.CallForPapersRepository;
 import com.ensao.gi4.repository.ConferenceRepository;
-import com.ensao.gi4.repository.TopicRepository;
 import com.ensao.gi4.service.api.CallForPapersService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.persistence.Tuple;
@@ -26,19 +25,17 @@ public class CallForPapersServiceImpl implements CallForPapersService {
 
 	private final CallForPapersRepository callForPapersRepository;
 	private final ConferenceRepository conferenceRepository;
-	private final TopicRepository topicRepository; 
-	
+
 
 	@Override
-	public Optional<CallForPapers> add(CallForPapersDto callForPapersDto, Long conferenceId) throws JsonProcessingException {
+	public Optional<CallForPapers> add(CallForPapersRequestDto callForPapersRequestDto, Long conferenceId) throws JsonProcessingException {
 
 		Optional<Conference> optionalConference = conferenceRepository.findById(conferenceId);
 		boolean exists = optionalConference.isPresent();
 
 		if (exists) {
-			CallForPapers callForPapers = Mapper.toCallForPapers(callForPapersDto); 
+			CallForPapers callForPapers = Mapper.toCallForPapers(callForPapersRequestDto);
 			callForPapers.setConference(optionalConference.get());
-			topicRepository.saveAll(callForPapers.getTopics());
 			callForPapersRepository.save(callForPapers);
 			
 			return Optional.of(callForPapers);
@@ -98,14 +95,14 @@ public class CallForPapersServiceImpl implements CallForPapersService {
 		conference.setVenue(tuple.get(4, String.class));
 		conference.setCity(tuple.get(5, String.class));
 		conference.setCountry(tuple.get(6, String.class));
-		conference.setFirstDay(tuple.get(7, LocalDate.class));
-		conference.setLastDay(tuple.get(8, LocalDate.class));
+		conference.setStartDate(tuple.get(7, LocalDate.class));
+		conference.setEndDate(tuple.get(8, LocalDate.class));
 		conference.setPrimaryArea(tuple.get(9, String.class));
 		conference.setSecondaryArea(tuple.get(10, String.class));
 		conference.setOrganizer(tuple.get(11, String.class));
 		conference.setPhoneNumber(tuple.get(12, String.class));
 		conference.setOtherInfo(tuple.get(13, String.class));
-		conference.setUser(tuple.get(14, User.class));
+		conference.setOwner(tuple.get(14, User.class));
 		return conference;
 	}
 

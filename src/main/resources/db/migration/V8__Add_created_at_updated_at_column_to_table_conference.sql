@@ -1,0 +1,5 @@
+ALTER TABLE conferences
+    ADD created_at TIMESTAMP WITHOUT TIME ZONE;
+
+ALTER TABLE conferences
+    ADD updated_at TIMESTAMP WITHOUT TIME ZONE;

@@ -1,7 +1,9 @@
 package com.ensao.gi4.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
@@ -19,12 +21,8 @@ public class User extends Person implements UserDetails {
 
 	private String password;
 	@Enumerated(EnumType.STRING)
-	// TODO: User can have multiple roles
-	private Role role; 
-	@OneToOne(mappedBy = "user")
-	@JsonBackReference
-	private Conference conference;
-	
+	private Role role;
+
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role.name());
 		return Collections.singletonList(authority);

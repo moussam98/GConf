@@ -1,16 +1,15 @@
 package com.ensao.gi4.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.LocalDate;
-import java.util.Optional;
-
+import com.ensao.gi4.model.Conference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
-import com.ensao.gi4.model.Conference;
+import java.time.LocalDate;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 public class ConferenceRepositoryTest {
@@ -21,8 +20,17 @@ public class ConferenceRepositoryTest {
 
 	@BeforeEach
 	void setUp() {
-		conference = new Conference("International Confernce", "IC", "UMP", "Oujda", "Morrocco", LocalDate.now(),
-				LocalDate.of(2022, 8, 30), "Computer Science", "Artificial Intelligence", "organizeName");
+		conference = new Conference(
+                "International Conference",
+                "IC",
+                "UMP",
+                "Oujda",
+                "Morocco",
+                LocalDate.now(),
+				LocalDate.now().plusDays(15),
+                "Computer Science",
+                "Artificial Intelligence",
+                "organizeName");
 	}
 
 	@Test
@@ -40,7 +48,7 @@ public class ConferenceRepositoryTest {
 		underTest.save(conference);
 
 		// when
-		boolean exists = underTest.existsByName(conference.getName());
+		boolean exists = underTest.existsByNameAndAcronym(conference.getName(), conference.getAcronym());
 
 		// then
 		assertThat(exists).isTrue();
@@ -50,10 +58,10 @@ public class ConferenceRepositoryTest {
 	@Test
 	void shouldReturnConferenceIfExist() {
 		// given
-		underTest.save(conference);
+        Conference savedConference = underTest.save(conference);
 
-		// when
-		Optional<Conference> optionalConference = underTest.findByName(conference.getName());
+        // when
+		Optional<Conference> optionalConference = underTest.findById(savedConference.getId());
 
 		// then
 		assertThat(optionalConference).isNotEmpty();
@@ -63,24 +71,24 @@ public class ConferenceRepositoryTest {
 	@Test
 	void shouldReturnEmptyIfConferenceNameDoesNotExists() {
 		// when
-		Optional<Conference> optionalConference = underTest.findByName(conference.getName());
+		Optional<Conference> optionalConference = underTest.findById(Long.MIN_VALUE);
 
 		// then
 		assertThat(optionalConference).isEmpty();
 	}
-	
+
 	@Test
-	void shouldfindConferenceById() {
+	void shouldFindConferenceById() {
 		underTest.save(conference);
 
-		// when 
+		// when
 		Optional<Conference> optionalConference = underTest.findById(conference.getId());
-		
-		// then 
+
+		// then
 		assertThat(optionalConference).isNotEmpty();
-		assertThat(optionalConference).hasValue(conference); 
+		assertThat(optionalConference).hasValue(conference);
 	}
 
-	
+
 
 }

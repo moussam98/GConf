@@ -1,8 +1,8 @@
 package com.ensao.gi4.controller;
 
+import com.ensao.gi4.dto.UserDto;
 import com.ensao.gi4.dto.UserPatchDto;
 import com.ensao.gi4.dto.UserRequestDto;
-import com.ensao.gi4.dto.UserResponseDto;
 import com.ensao.gi4.service.api.UserService;
 import com.ensao.gi4.utils.MessageSourceUtils;
 import jakarta.validation.Valid;
@@ -18,7 +18,7 @@ record UserController(UserService userService,
                       MessageSourceUtils messageSourceUtils) {
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
         return userService.findById(id).map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -28,13 +28,13 @@ record UserController(UserService userService,
         return (email != null) ? getUserByEmail(email) : getUsers();
     }
 
-    private ResponseEntity<UserResponseDto> getUserByEmail(String email) {
+    private ResponseEntity<UserDto> getUserByEmail(String email) {
         return userService.findByEmail(email)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    private ResponseEntity<List<UserResponseDto>> getUsers() {
+    private ResponseEntity<List<UserDto>> getUsers() {
         return ResponseEntity.ok(userService.findAll());
     }
 
@@ -55,7 +55,7 @@ record UserController(UserService userService,
     }
 
     @PostMapping
-    public ResponseEntity<UserResponseDto> register(@Valid @RequestBody UserRequestDto userDto) {
+    public ResponseEntity<UserDto> register(@Valid @RequestBody UserRequestDto userDto) {
         return ResponseEntity.ok(userService.register(userDto));
     }
 

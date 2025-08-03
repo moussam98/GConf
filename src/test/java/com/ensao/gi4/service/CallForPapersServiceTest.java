@@ -1,12 +1,10 @@
 package com.ensao.gi4.service;
 
-import com.ensao.gi4.dto.CallForPapersDto;
+import com.ensao.gi4.dto.CallForPapersRequestDto;
 import com.ensao.gi4.model.CallForPapers;
 import com.ensao.gi4.model.Conference;
-import com.ensao.gi4.model.Topic;
 import com.ensao.gi4.repository.CallForPapersRepository;
 import com.ensao.gi4.repository.ConferenceRepository;
-import com.ensao.gi4.repository.TopicRepository;
 import com.ensao.gi4.service.api.CallForPapersService;
 import com.ensao.gi4.service.impl.CallForPapersServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -34,32 +31,34 @@ public class CallForPapersServiceTest {
 	private ConferenceRepository conferenceRepository;
 	@Mock
 	private CallForPapersRepository callForPapersRepository;
-	@Mock
-	private TopicRepository topicRepository;
 	private CallForPapersService underTest;
 	Conference conference;
 	CallForPapers callForPapers;
-	private Set<Topic> topics;
+	private Set<String> topics;
 
 	@BeforeEach
 	void setUp() {
-		underTest = new CallForPapersServiceImpl(callForPapersRepository, conferenceRepository, topicRepository);
+		underTest = new CallForPapersServiceImpl(callForPapersRepository, conferenceRepository);
 
 		// given
-		conference = new Conference("International Confernce", "IC", "UMP", "Oujda", "Morocco", LocalDate.now(),
-				LocalDate.of(2022, 8, 30), "Computer Science", "Artificial Intelligence", "organizeName");
+        conference = new Conference(
+                "International Conference",
+                "IC",
+                "UMP",
+                "Oujda",
+                "Morocco",
+                LocalDate.now(),
+                LocalDate.now().plusDays(15),
+                "Computer Science",
+                "Artificial Intelligence",
+                "organizeName");
 		conference.setId(1L);
 
-		Topic topic1 = new Topic(null, "Medical");
-		Topic topic2 = new Topic(null, "Agricultural");
-		Topic topic3 = new Topic(null, "Automotive");
-		Topic topic4 = new Topic(null, "Education");
-
 		topics = new HashSet<>();
-		topics.add(topic1);
-		topics.add(topic2);
-		topics.add(topic3);
-		topics.add(topic4);
+		topics.add("Medical");
+		topics.add("Agricultural");
+		topics.add("Automotive");
+        topics.add("Education");
 
 		callForPapers = new CallForPapers();
 		callForPapers.setStartDate(LocalDate.of(2022, 4, 10));
@@ -71,14 +70,16 @@ public class CallForPapersServiceTest {
 	@Test
 	void shouldAddCFP() throws JsonProcessingException {
 		// given
-		CallForPapersDto callForPapersDto = new CallForPapersDto("10/04/2022", "30/6/2022", topics,
-				"Guidelines instruction");
+		var callForPapersDto = new CallForPapersRequestDto(
+                "10/04/2022",
+                "30/06/2022",
+                topics,
+                "Guidelines instruction");
 		callForPapers.setTopics(topics);
 		callForPapers.setConference(conference);
 
 		// when
 		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.of(conference));
-		when(topicRepository.saveAll(topics)).thenReturn(new ArrayList<>(topics));
 		when(callForPapersRepository.save(callForPapers)).thenReturn(callForPapers);
 		ArgumentCaptor<CallForPapers> cfpArgumentCaptor = ArgumentCaptor.forClass(CallForPapers.class);
 
@@ -94,8 +95,11 @@ public class CallForPapersServiceTest {
 	@Test
 	void shouldNotAddCFP() throws JsonProcessingException {
 		// given
-		CallForPapersDto callForPapersDto = new CallForPapersDto("10/10/2022", "30/8/2022", topics,
-				"Guidelines instruction");
+        var callForPapersDto = new CallForPapersRequestDto(
+                "10/04/2022",
+                "30/04/2022",
+                topics,
+                "Guidelines instruction");
 		callForPapers.setTopics(topics);
 		callForPapers.setConference(conference);
 

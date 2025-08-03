@@ -1,6 +1,6 @@
 package com.ensao.gi4.controller;
 
-import com.ensao.gi4.dto.CallForPapersDto;
+import com.ensao.gi4.dto.CallForPapersRequestDto;
 import com.ensao.gi4.model.CallForPapers;
 import com.ensao.gi4.service.api.CallForPapersService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,8 +14,8 @@ record CallForPapersController(CallForPapersService callForPapersService) {
 	@PostMapping("/{id}/cfp")
 	public ResponseEntity<CallForPapers> addCFP(
 			@PathVariable Long id,
-			@RequestBody CallForPapersDto callForPapersDto) throws JsonProcessingException {
-        return  callForPapersService.add(callForPapersDto, id)
+			@RequestBody CallForPapersRequestDto callForPapersRequestDto) throws JsonProcessingException {
+        return  callForPapersService.add(callForPapersRequestDto, id)
 				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.badRequest().build());
 	}

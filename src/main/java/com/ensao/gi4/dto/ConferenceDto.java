@@ -1,23 +1,27 @@
 package com.ensao.gi4.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 
-@Getter
-@Setter
-public class ConferenceDto {
-
-	private String name;
-	private String acronym;
-	private String venue;
-	private String city;
-	private String country;
-	private String firstDay;
-	private String lastDay;
-	private String primaryArea;
-	private String secondaryArea;
-	private String organizer;
-	private String phoneNumber;
-	private String otherInfo;
-
+public record ConferenceDto(
+		Long id,
+		String name,
+		String acronym,
+		String venue,
+		String city,
+		String country,
+		LocalDate startDate,
+		LocalDate endDate,
+		String primaryArea,
+		String secondaryArea,
+		String organizer,
+		String phoneNumber,
+		String otherInfo,
+		List<SubmissionDto> submissions,
+		UserDto owner,
+		CallForPapersDto callForPapers,
+		Instant createdAt,
+		Instant updatedAt) {
 }
+

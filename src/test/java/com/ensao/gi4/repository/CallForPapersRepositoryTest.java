@@ -1,20 +1,18 @@
 package com.ensao.gi4.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.ensao.gi4.model.CallForPapers;
+import com.ensao.gi4.model.Conference;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-
-import com.ensao.gi4.model.CallForPapers;
-import com.ensao.gi4.model.Conference;
-import com.ensao.gi4.model.Topic;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 public class CallForPapersRepositoryTest {
@@ -23,27 +21,29 @@ public class CallForPapersRepositoryTest {
 	private CallForPapersRepository underTest;
 	@Autowired
 	private ConferenceRepository conferenceRepository;
-	@Autowired
-	private TopicRepository topicRepository;
 	private Conference conference;
 	private CallForPapers callForPapers;
-	private Set<Topic> topics;
+	private Set<String> topics;
 
 	@BeforeEach
 	void setUp() {
-		conference = new Conference("International Confernce", "IC", "UMP", "Oujda", "Morrocco", LocalDate.now(),
-				LocalDate.of(2022, 8, 30), "Computer Science", "Artificial Intelligence", "organizeName");
-
-		Topic topic1 = new Topic(null, "Medical");
-		Topic topic2 = new Topic(null, "Agricultural");
-		Topic topic3 = new Topic(null, "Automotive");
-		Topic topic4 = new Topic(null, "Education");
+		conference = new Conference(
+                "International Conference",
+                "IC",
+                "UMP",
+                "Oujda",
+                "Morrocco",
+                LocalDate.now(),
+				LocalDate.now().plusMonths(1),
+                "Computer Science",
+                "Artificial Intelligence",
+                "organizeName");
 
 		topics = new HashSet<>();
-		topics.add(topic1);
-		topics.add(topic2);
-		topics.add(topic3);
-		topics.add(topic4);
+		topics.add("Medical");
+		topics.add("Agricultural");
+		topics.add("Automotive");
+		topics.add("Education");
 
 		callForPapers = new CallForPapers();
 		callForPapers.setStartDate(LocalDate.now());
@@ -56,7 +56,6 @@ public class CallForPapersRepositoryTest {
 	void shouldAddCallForPapers() {
 		// given
 		conferenceRepository.save(conference);
-		topicRepository.saveAll(topics);
 
 		callForPapers.setConference(conference);
 		callForPapers.setTopics(topics);
@@ -73,7 +72,6 @@ public class CallForPapersRepositoryTest {
 	void shouldFindCFPByConference() {
 		// given
 		conferenceRepository.save(conference);
-		topicRepository.saveAll(topics);
 
 		callForPapers.setConference(conference);
 		callForPapers.setTopics(topics);
@@ -104,7 +102,6 @@ public class CallForPapersRepositoryTest {
 	void shouldCheckIfCFPExits() {
 		// given
 		conferenceRepository.save(conference);
-		topicRepository.saveAll(topics);
 
 		callForPapers.setConference(conference);
 		callForPapers.setTopics(topics);

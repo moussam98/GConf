@@ -1,14 +1,14 @@
 package com.ensao.gi4.service.impl;
 
+import com.ensao.gi4.dto.UserDto;
 import com.ensao.gi4.dto.UserPatchDto;
 import com.ensao.gi4.dto.UserRequestDto;
-import com.ensao.gi4.dto.UserResponseDto;
 import com.ensao.gi4.dto.mapper.Mapper;
-import com.ensao.gi4.exception.UserNotFoundException;
 import com.ensao.gi4.model.Role;
 import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.UserRepository;
 import com.ensao.gi4.service.api.UserService;
+import com.ensao.gi4.service.exception.UserNotFoundException;
 import com.ensao.gi4.utils.MessageSourceUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 @Service
-@Transactional
 public class UserServiceImpl implements UserService {
 
 	private final UserRepository userRepository;
@@ -46,7 +45,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserResponseDto register(UserRequestDto userRequestDto) {
+	public UserDto register(UserRequestDto userRequestDto) {
 		if (userRepository.findByEmail(userRequestDto.email()).isPresent()){
 			throw new IllegalArgumentException(messageSourceUtils.getMessage("error.user.email.duplication",
 					new Object[]{userRequestDto.email()}));
@@ -61,53 +60,56 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public Optional<UserResponseDto> findById(Long id) {
+	public Optional<UserDto> findById(Long id) {
 		return userRepository.findById(id).map(Mapper::toUserDto);
 	}
 
 	@Override
-	public List<UserResponseDto> findAll() {
+	public List<UserDto> findAll() {
 		return userRepository.findAll().stream().map(Mapper::toUserDto).toList();
 	}
 
 	@Override
-	public Optional<UserResponseDto> findByEmail(String email) {
+	public Optional<UserDto> findByEmail(String email) {
 		return userRepository.findByEmail(email).map(Mapper::toUserDto);
 	}
 
 	@Override
+	@Transactional
 	public Integer deleteByEmail(String email) {
 		return userRepository.deleteByEmail(email);
 	}
 
 	@Override
-	public UserResponseDto update(UserPatchDto userPatchDto, String email) {
+	public UserDto update(UserPatchDto userPatchDto, String email) {
 		User user = userRepository.findByEmail(email).orElseThrow(() ->
-				new UserNotFoundException(messageSourceUtils.getMessage("error.user.not_found",
-						new Object[]{email})));
+				new UserNotFoundException(messageSourceUtils.getMessage("error.user.not_found", new Object[]{email})));
 
-		updateField(userPatchDto.firstName(), user::setFirstName);
-		updateField(userPatchDto.lastName(), user::setLastName);
-		updateEmailIfValid(userPatchDto.email(), user);
-		user.setUpdatedAt(Instant.now());
+		updateUserFields(user, userPatchDto);
+		return Mapper.toUserDto(userRepository.save(user));
+	}
+
+	private void updateUserFields(User target,UserPatchDto userPatchDto) {
+		updateField(userPatchDto.firstName(), target::setFirstName);
+		updateField(userPatchDto.lastName(), target::setLastName);
+		updateEmailIfValid(userPatchDto.email(), target);
+		target.setUpdatedAt(Instant.now());
 		if (userPatchDto.password() != null && !userPatchDto.password().isEmpty()) {
 			String encodedPassword = passwordEncoder.encode(userPatchDto.password());
-			user.setPassword(encodedPassword);
+			target.setPassword(encodedPassword);
 		}
-		return Mapper.toUserDto(userRepository.save(user));
+	}
+
+	private <T> void updateField(T fieldValue, Consumer<T> fieldSetter){
+		if (fieldValue != null) {
+			fieldSetter.accept(fieldValue);
+		}
 	}
 
 	private void updateEmailIfValid(String newEmail, User user) {
 		if(newEmail != null && (newEmail.equals(user.getEmail()) || userRepository.existsByEmail(user.getEmail()))) {
 			throw new IllegalStateException(messageSourceUtils.getMessage("error.user.email.duplication",
 					new Object[]{newEmail}));
-		}
-	}
-
-
-	private <T> void updateField(T fieldValue, Consumer<T> fieldSetter){
-		if (fieldValue != null) {
-			fieldSetter.accept(fieldValue);
 		}
 	}
 

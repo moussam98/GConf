@@ -1,6 +1,9 @@
 package com.ensao.gi4.repository;
 
-import com.ensao.gi4.model.*;
+import com.ensao.gi4.model.Author;
+import com.ensao.gi4.model.Conference;
+import com.ensao.gi4.model.Document;
+import com.ensao.gi4.model.Submission;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,21 +24,28 @@ public class SubmissionRepositoryTest {
 	@Autowired
 	private ConferenceRepository conferenceRepository;
 	@Autowired
-	private KeywordRepository keywordRepository;
-	@Autowired
 	private DocumentRepository documentRepository;
 	@Autowired
 	private AuthorRepository authorRepository;
 	private Conference conference;
 	private List<Author> authors;
-	private Set<Keyword> keywords;
+	private Set<String> keywords;
 	private Document document;
 	private Submission submission;
 
 	@BeforeEach
 	void setUp() {
-		conference = new Conference("International Confernce", "IC", "UMP", "Oujda", "Morrocco", LocalDate.now(),
-				LocalDate.of(2022, 8, 30), "Computer Science", "Artificial Intelligence", "organizeName");
+        conference = new Conference(
+                "International Conference",
+                "IC",
+                "UMP",
+                "Oujda",
+                "Morocco",
+                LocalDate.now(),
+                LocalDate.now().plusDays(15),
+                "Computer Science",
+                "Artificial Intelligence",
+                "organizeName");
 
 		Author author = new Author();
 		Author author2 = new Author();
@@ -55,23 +65,26 @@ public class SubmissionRepositoryTest {
 		authors.add(author);
 		authors.add(author2);
 
-		Keyword keyword1 = new Keyword(null, "Artificial Intelligence");
-		Keyword keyword2 = new Keyword(null, "Internet Of Things");
-		Keyword keyword3 = new Keyword(null, "Block chain");
-		Keyword keyword4 = new Keyword(null, "Technologie");
-
 		keywords = new HashSet<>();
-		keywords.add(keyword1);
-		keywords.add(keyword2);
-		keywords.add(keyword3);
-		keywords.add(keyword4);
+		keywords.add("Artificial Intelligence");
+		keywords.add("Internet Of Things");
+        keywords.add("Block chain");
+		keywords.add("Technology");
 
 		document = new Document();
 		document.setFilename("Test.pdf");
 		document.setFileType(MediaType.APPLICATION_PDF_VALUE);
 		document.setData("Hello world".getBytes());
 
-		submission = new Submission(null, "Title of submission", "Description of subject", null, null, null, null, null,
+		submission = new Submission(
+                null,
+                "Title of submission",
+                "Description of subject",
+                null,
+                null,
+                null,
+                null,
+                null,
 				null);
 
 	}
@@ -81,7 +94,6 @@ public class SubmissionRepositoryTest {
 		// given
 		conferenceRepository.save(conference);
 		authorRepository.saveAll(authors);
-		keywordRepository.saveAll(keywords);
 		documentRepository.save(document);
 
 		submission.setConference(conference);
@@ -101,7 +113,6 @@ public class SubmissionRepositoryTest {
 		// given
 		conferenceRepository.save(conference);
 		authorRepository.saveAll(authors);
-		keywordRepository.saveAll(keywords);
 		documentRepository.save(document);
 
 		submission.setConference(conference);
@@ -126,7 +137,6 @@ public class SubmissionRepositoryTest {
 		// given
 		conferenceRepository.save(conference);
 		authorRepository.saveAll(authors);
-		keywordRepository.saveAll(keywords);
 		documentRepository.save(document);
 
 		submission.setConference(conference);

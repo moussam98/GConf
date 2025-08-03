@@ -1,7 +1,8 @@
 package com.ensao.gi4.service.impl;
 
-import com.ensao.gi4.dto.SubmissionDto;
-import com.ensao.gi4.dto.UserResponseDto;
+import com.ensao.gi4.dto.ConferenceDto;
+import com.ensao.gi4.dto.SubmissionRequestDto;
+import com.ensao.gi4.dto.UserDto;
 import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.model.Document;
@@ -25,15 +26,14 @@ public class SubmissionServiceImpl implements SubmissionService {
 
 	private final SubmissionRepository submissionRepository;
 	private final ConferenceService conferenceService;
-	private final KeywordService keywordService;
 	private final DocumentService documentService;
 	private final AuthorsService authorService;
 	private final UserService userService;
 
 	@Override
-	public Long add(SubmissionDto submissionDto, Long userId) throws IOException {
+	public Long add(SubmissionRequestDto submissionRequestDto, Long userId) throws IOException {
 		return userService.findById(userId)
-				.map(user -> saveSubmissionIfConferenceExists(user, submissionDto))
+				.map(user -> saveSubmissionIfConferenceExists(user, submissionRequestDto))
 				.orElse(-1L);
 	}
 
@@ -125,23 +125,24 @@ public class SubmissionServiceImpl implements SubmissionService {
 		return document;
 	}
 	
-	private Long saveSubmissionIfConferenceExists(UserResponseDto userResponseDto, SubmissionDto submissionDto){
-		return conferenceService.findByUser(userResponseDto.id())
+	private Long saveSubmissionIfConferenceExists(UserDto userDto, SubmissionRequestDto submissionRequestDto){
+		return conferenceService.findByOwnerId(userDto.id())
 				.map(conference -> {
                     try {
-                        return saveSubmission(conference, submissionDto).getId();
+                        return saveSubmission(conference, submissionRequestDto).getId();
                     } catch (IOException e) {
-                        throw new IllegalStateException("Error while saving submission", e);
+                        throw new IllegalStateException("Error while saving submission: " +  e.getMessage());
                     }
                 })
 				.orElse(-1L);
 	}
 
-	private Submission saveSubmission(Conference conference,  SubmissionDto submissionDto)
+	private Submission saveSubmission(ConferenceDto conferenceDto, SubmissionRequestDto submissionRequestDto)
 			throws IOException {
-		Submission submission = Mapper.toSubmission(submissionDto);
-		keywordService.addAll(submission.getKeywords());
+		Submission submission = Mapper.toSubmission(submissionRequestDto);
 		documentService.add(submission.getDocument());
+		Conference conference = new Conference();
+		conference.setId(conferenceDto.id());
 		submission.setConference(conference);
 		authorService.addAll(submission.getAuthors());
 		submissionRepository.save(submission);

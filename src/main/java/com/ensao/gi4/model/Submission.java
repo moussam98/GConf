@@ -1,5 +1,6 @@
 package com.ensao.gi4.model;
 
+import com.ensao.gi4.repository.StringSetConverter;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -21,9 +22,10 @@ public class Submission {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	private String title; 
-	private String description; 
-	@OneToMany
-	private Set<Keyword> keywords = new HashSet<>(); 
+	private String description;
+	@Convert(converter = StringSetConverter.class)
+	@Column(name = "keywords", nullable = false)
+	private Set<String> keywords = new HashSet<>();
 	@OneToOne
 	private Document document;
 	@ManyToOne

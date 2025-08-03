@@ -1,164 +1,101 @@
 package com.ensao.gi4.service.impl;
 
 import com.ensao.gi4.dto.ConferenceDto;
-import com.ensao.gi4.dto.ConferenceFirstInfoDto;
+import com.ensao.gi4.dto.ConferencePatchDto;
+import com.ensao.gi4.dto.ConferenceRequestDto;
+import com.ensao.gi4.dto.UserDto;
 import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.Conference;
-import com.ensao.gi4.model.Document;
-import com.ensao.gi4.model.Submission;
 import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.ConferenceRepository;
-import com.ensao.gi4.repository.UserRepository;
 import com.ensao.gi4.service.api.ConferenceService;
-import jakarta.persistence.Tuple;
+import com.ensao.gi4.service.api.UserService;
+import com.ensao.gi4.service.exception.UserNotFoundException;
+import com.ensao.gi4.utils.MessageSourceUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Instant;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 @Service
-@Transactional
 @AllArgsConstructor
 public class ConferenceServiceImpl implements ConferenceService {
 
 	private final ConferenceRepository conferenceRepository;
-	private final UserRepository userRepository;
+    private final UserService userService;
+	private final MessageSourceUtils messageSourceUtils;
 
 	@Override
-	public Long add(ConferenceFirstInfoDto conferenceFirstInfoDto, Long userId) {
-		Conference conference = Mapper.firstInfoToConference(conferenceFirstInfoDto);
+	public ConferenceDto add(ConferenceRequestDto conferenceRequestDto, Long userId) {
 
-		boolean existsByName = conferenceRepository.existsByName(conference.getName());
-		boolean existsByAcronym = conferenceRepository.existsByAcronym(conference.getAcronym());
-
-		if (existsByName && existsByAcronym) {
-			return -1L;
+		if (conferenceRepository.existsByNameAndAcronym(conferenceRequestDto.name(), conferenceRequestDto.acronym())) {
+			throw new IllegalStateException(messageSourceUtils
+					.getMessage(
+							"organizer.conference.conflict",
+							new Object[]{conferenceRequestDto.name(), conferenceRequestDto.acronym()},
+							Locale.ENGLISH));
 		} else {
-			Optional<User> optionalUser = userRepository.findById(userId);
-			optionalUser.ifPresent(conference::setUser);
-			Conference savedConference = conferenceRepository.save(conference);
-			return savedConference.getId();
+            Conference conference = Mapper.toConference(conferenceRequestDto);
+			Instant instant = Instant.now();
+			conference.setCreatedAt(instant);
+			conference.setUpdatedAt(instant);
+			UserDto userDto = userService.findById(userId).orElseThrow(
+					() -> new UserNotFoundException(messageSourceUtils.getMessage("organizer.account.not_found")));
+			conference.setOwner(Mapper.toUser(userDto));
+			return Mapper.toConferenceDto(conferenceRepository.save(conference));
 		}
 	}
 
 	@Override
-	public Optional<Conference> findByName(String name) {
-		List<Tuple> tuples = conferenceRepository.findConferenceByName(name);
-		if (!tuples.isEmpty()) {
-			return conferenceMapper(tuples);
-		}else {
-			return conferenceRepository.findByName(name);
-		}
-
-	}
-
-	
-	@Override
-	public Optional<Conference> findByAcronym(String acronym) {
-		List<Tuple> tuples = conferenceRepository.findConferenceByAcronym(acronym);
-		if (!tuples.isEmpty()) {
-			return conferenceMapper(tuples);
-		}else {
-			return conferenceRepository.findByAcronym(acronym);
-		}
+	public Optional<ConferenceDto> findById(Long id) {
+		return conferenceRepository.findConferenceById(id)
+				.map(Mapper::toConferenceDto);
 	}
 
 	@Override
-	public Optional<Conference> findById(Long id) {
-		List<Tuple> tuples = conferenceRepository.findConferenceById(id);
-		if (!tuples.isEmpty()) {
-			return conferenceMapper(tuples);
-		}else {
-			return conferenceRepository.findById(id);
-		}
-	}
-
-	@Override
-	public Optional<Conference> updateConferenceById(Long id, ConferenceDto conferenceDto) {
-
-		Conference newConference = Mapper.toConference(conferenceDto);
-
-		Optional<Conference> conferenceOptional = conferenceRepository.findById(id);
-
-		if (conferenceOptional.isPresent()) {
-			updateConference(newConference, conferenceOptional.get());
-			return conferenceOptional;
-		}else {
-			return Optional.empty();			
-		}
-	}
+	public Optional<ConferenceDto> updateConferenceById(Long id, ConferencePatchDto conferencePatchDto) {
+		return conferenceRepository.findById(id)
+				.map(existingConference -> {
+					updateConferenceFields(existingConference, conferencePatchDto);
+					Conference savedConference = conferenceRepository.save(existingConference);
+					return Mapper.toConferenceDto(savedConference);
+				});
+    }
 
 	@Override
 	public void deleteById(Long id) {
 		conferenceRepository.deleteById(id);
 	}
 	
-	private void updateConference(Conference newConference, Conference updatedConference) {
-		updatedConference.setName(newConference.getName());
-		updatedConference.setAcronym(newConference.getAcronym());
-		updatedConference.setVenue(newConference.getVenue());
-		updatedConference.setCity(newConference.getCity());
-		updatedConference.setCountry(newConference.getCountry());
-		updatedConference.setFirstDay(newConference.getFirstDay());
-		updatedConference.setLastDay(newConference.getLastDay());
-		updatedConference.setPrimaryArea(newConference.getPrimaryArea());
-		updatedConference.setSecondaryArea(newConference.getSecondaryArea());
-		updatedConference.setOrganizer(newConference.getOrganizer());
-		updatedConference.setPhoneNumber(newConference.getPhoneNumber());
-		updatedConference.setOtherInfo(newConference.getOtherInfo());
+	private void updateConferenceFields(Conference target, ConferencePatchDto source) {
+		updateField(source.venue(),  target::setVenue);
+		updateField(source.city(), target::setCity);
+		updateField(source.country(), target::setCountry);
+		updateField(source.startDate(), target::setStartDate);
+		updateField(source.endDate(), target::setEndDate);
+		updateField(source.primaryArea(),  target::setPrimaryArea);
+		updateField(source.secondaryArea(),  target::setSecondaryArea);
+		updateField(source.organizer(),   target::setOrganizer);
+		updateField(source.phoneNumber(),  target::setPhoneNumber);
+		updateField(source.otherInfo(), target::setOtherInfo);
+		target.setUpdatedAt(Instant.now());
 	}
-	
-	private Optional<Conference> conferenceMapper(List<Tuple> tuples) {
-		Conference conference;
-		List<Submission> submissions;
-		conference = tuples.getFirst().get(0, Conference.class);
-		submissions = new ArrayList<>(); 
-		for (Tuple tuple : tuples) {
-			
-			if (tuple.get(1) != null) {
-				Submission submission = submissionMapper(tuple);
-				Document document = documentMapper(tuple);
-				submission.setDocument(document);
-				submissions.add(submission); 
-			}
+
+	private <T> void updateField(T value, Consumer<T> setter){
+		if(value != null){
+			setter.accept(value);
 		}
-		conference.setSubmissions(submissions);
-		return Optional.of(conference);
-	}
-
-	private Submission submissionMapper(Tuple tuple) {
-		Submission submission = new Submission();
-		submission.setId(tuple.get(1, Long.class));
-		submission.setTitle(tuple.get(2, String.class));
-		submission.setDescription(tuple.get(3, String.class));
-		return submission;
-	}
-
-	private Document documentMapper(Tuple tuple) {
-		Document document = new Document();
-		document.setId(tuple.get(4, Long.class));
-		document.setFilename(tuple.get(5, String.class));
-		document.setFileType(tuple.get(6, String.class));
-		return document;
 	}
 
 	@Override
-	public Optional<Conference> findByUser(Long userId) {
-		
-		Optional<User> userOptional = userRepository.findById(userId);
-		if (userOptional.isPresent()) {
-			List<Tuple> tuples = conferenceRepository.findConferenceByUser(userOptional.get());
-			
-			if (!tuples.isEmpty()) {
-				return conferenceMapper(tuples); 
-			}else {
-				return conferenceRepository.findByUser(userOptional.get());
-			}
-		}
-		return Optional.empty();
+	public Optional<ConferenceDto> findByOwnerId(Long ownerId) {
+		var owner = new User();
+		owner.setId(ownerId);
+		return conferenceRepository.findByOwner(owner)
+				.map(Mapper::toConferenceDto);
 	}
 
 }

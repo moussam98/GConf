@@ -1,18 +1,13 @@
 package com.ensao.gi4.dto;
 
+import java.time.LocalDate;
 import java.util.Set;
 
-import com.ensao.gi4.model.Topic;
+public record  CallForPapersDto(
+        Long id,
+        LocalDate startDate,
+        LocalDate endDate,
+        Set<String> topics,
+        String guidelines) {
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-@AllArgsConstructor
-@Getter
-public class CallForPapersDto {
-
-	private String startDate; 
-	private String endDate;
-	private Set<Topic> topics; 
-	private String guidelines; 
 }

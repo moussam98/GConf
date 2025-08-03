@@ -1,4 +1,4 @@
-package com.ensao.gi4.exception;
+package com.ensao.gi4.service.exception;
 
 public class UserNotFoundException extends RuntimeException {
 

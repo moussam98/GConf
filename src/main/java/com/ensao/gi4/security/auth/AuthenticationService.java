@@ -1,6 +1,6 @@
 package com.ensao.gi4.security.auth;
 
-import com.ensao.gi4.dto.UserResponseDto;
+import com.ensao.gi4.dto.UserDto;
 import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.Role;
 import com.ensao.gi4.security.jwt.JwtService;
@@ -32,18 +32,18 @@ public class AuthenticationService {
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         var authenticationToken = new UsernamePasswordAuthenticationToken(request.email(), request.password());
         authenticationManager.authenticate(authenticationToken);
-        UserResponseDto userResponseDto = fetchUserByEmail(request.email());
-        Map<String, Object> claims = getUserClaims(userResponseDto.role());
-        var jwtToken = jwtService.generateAccessToken(claims, userResponseDto.email());
-        var refreshToken = jwtService.generateRefreshToken(userResponseDto.email());
-        saveUserTokens(userResponseDto, jwtToken, refreshToken);
+        UserDto userDto = fetchUserByEmail(request.email());
+        Map<String, Object> claims = getUserClaims(userDto.role());
+        var jwtToken = jwtService.generateAccessToken(claims, userDto.email());
+        var refreshToken = jwtService.generateRefreshToken(userDto.email());
+        saveUserTokens(userDto, jwtToken, refreshToken);
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
                 .build();
     }
 
-    private UserResponseDto fetchUserByEmail(String email) {
+    private UserDto fetchUserByEmail(String email) {
         return userService.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
     }
@@ -55,9 +55,9 @@ public class AuthenticationService {
         return claims;
     }
 
-    private void saveUserToken(UserResponseDto userResponseDto, String jwtToken, TokenType tokenType) {
+    private void saveUserToken(UserDto userDto, String jwtToken, TokenType tokenType) {
         var token = Token.builder()
-                .user(Mapper.toUser(userResponseDto))
+                .user(Mapper.toUser(userDto))
                 .token(jwtToken)
                 .tokenType(tokenType)
                 .expired(false)
@@ -84,10 +84,10 @@ public class AuthenticationService {
         throw new InvalidTokenException("Invalid refresh token");
     }
 
-    private void saveUserTokens(UserResponseDto userResponseDto, String accessToken, String refreshToken) {
-        tokenService.revokeAllUserTokens(userResponseDto.id());
-        saveUserToken(userResponseDto, accessToken, TokenType.ACCESS);
-        saveUserToken(userResponseDto, refreshToken, TokenType.REFRESH);
+    private void saveUserTokens(UserDto userDto, String accessToken, String refreshToken) {
+        tokenService.revokeAllUserTokens(userDto.id());
+        saveUserToken(userDto, accessToken, TokenType.ACCESS);
+        saveUserToken(userDto, refreshToken, TokenType.REFRESH);
     }
 
 
