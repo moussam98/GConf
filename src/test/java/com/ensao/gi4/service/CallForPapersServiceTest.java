@@ -1,17 +1,19 @@
 package com.ensao.gi4.service;
 
+import com.ensao.gi4.dto.CallForPapersDto;
 import com.ensao.gi4.dto.CallForPapersRequestDto;
+import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.CallForPapers;
 import com.ensao.gi4.model.Conference;
+import com.ensao.gi4.model.Role;
+import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.CallForPapersRepository;
-import com.ensao.gi4.repository.ConferenceRepository;
 import com.ensao.gi4.service.api.CallForPapersService;
+import com.ensao.gi4.service.api.ConferenceService;
 import com.ensao.gi4.service.impl.CallForPapersServiceImpl;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -21,24 +23,25 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class CallForPapersServiceTest {
 
 	@Mock
-	private ConferenceRepository conferenceRepository;
+	private ConferenceService conferenceService;
 	@Mock
 	private CallForPapersRepository callForPapersRepository;
 	private CallForPapersService underTest;
 	Conference conference;
 	CallForPapers callForPapers;
 	private Set<String> topics;
+    private CallForPapersRequestDto callForPapersRequestDto;
 
 	@BeforeEach
 	void setUp() {
-		underTest = new CallForPapersServiceImpl(callForPapersRepository, conferenceRepository);
+		underTest = new CallForPapersServiceImpl(callForPapersRepository, conferenceService);
 
 		// given
         conference = new Conference(
@@ -53,6 +56,7 @@ public class CallForPapersServiceTest {
                 "Artificial Intelligence",
                 "organizeName");
 		conference.setId(1L);
+        conference.setOwner(createUser());
 
 		topics = new HashSet<>();
 		topics.add("Medical");
@@ -65,89 +69,86 @@ public class CallForPapersServiceTest {
 		callForPapers.setEndDate(LocalDate.of(2022, 6, 30));
 		callForPapers.setGuidelines("Guidelines instruction");
 		callForPapers.setTopics(topics);
+
+        callForPapersRequestDto = createCallForPapersDto("10/04/2022", "30/04/2022");
 	}
 
+    private User createUser() {
+        var owner = new User();
+        owner.setId(1L);
+        owner.setFirstName("Ali");
+        owner.setLastName("Moussa");
+        owner.setEmail("ali@gmail.com");
+        owner.setRole(Role.ADMIN);
+        return owner;
+    }
 	@Test
-	void shouldAddCFP() throws JsonProcessingException {
-		// given
-		var callForPapersDto = new CallForPapersRequestDto(
-                "10/04/2022",
-                "30/06/2022",
-                topics,
-                "Guidelines instruction");
-		callForPapers.setTopics(topics);
-		callForPapers.setConference(conference);
-
+	void shouldAddCFP() {
+        // Given
 		// when
-		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.of(conference));
-		when(callForPapersRepository.save(callForPapers)).thenReturn(callForPapers);
-		ArgumentCaptor<CallForPapers> cfpArgumentCaptor = ArgumentCaptor.forClass(CallForPapers.class);
+		when(conferenceService.findById(conference.getId()))
+                .thenReturn(Optional.of(Mapper.toConferenceDto(conference)));
+		when(callForPapersRepository.save(any())).thenReturn(callForPapers);
 
-		Optional<CallForPapers> optionalCFP = underTest.add(callForPapersDto, conference.getId());
+		Optional<CallForPapersDto> optionalCFP = underTest.add(callForPapersRequestDto, conference.getId());
 
 		// then
-		verify(callForPapersRepository).save(cfpArgumentCaptor.capture());
-		assertThat(cfpArgumentCaptor.getValue()).isEqualTo(callForPapers);
-		assertThat(optionalCFP).isNotEmpty();
-		assertThat(optionalCFP).hasValue(callForPapers);
+		assertThat(optionalCFP)
+                .isPresent()
+                .hasValueSatisfying( cfp -> {
+					assertThat(cfp.guidelines()).isEqualTo(callForPapers.getGuidelines());
+                    assertThat(cfp.startDate()).isEqualTo(callForPapers.getStartDate());
+                    assertThat(cfp.endDate()).isEqualTo(callForPapers.getEndDate());
+                    assertThat(cfp.topics()).hasSameSizeAs(topics);
+                });
 	}
 
 	@Test
-	void shouldNotAddCFP() throws JsonProcessingException {
+	void shouldNotAddCFP() {
 		// given
-        var callForPapersDto = new CallForPapersRequestDto(
-                "10/04/2022",
-                "30/04/2022",
-                topics,
-                "Guidelines instruction");
-		callForPapers.setTopics(topics);
-		callForPapers.setConference(conference);
+        var callForPapersDto = createCallForPapersDto("10/04/2022", "30/04/2022");
 
-		// when
-		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.empty());
-		Optional<CallForPapers> optionalCFP = underTest.add(callForPapersDto, conference.getId());
+        // when
+		when(conferenceService.findById(conference.getId())).thenReturn(Optional.empty());
+		Optional<CallForPapersDto> optionalCFP = underTest.add(callForPapersDto, conference.getId());
 
 		// then
 		assertThat(optionalCFP).isEmpty();
 
 	}
 
-	@Test
+    private CallForPapersRequestDto createCallForPapersDto(String startDate, String endDate) {
+        var callForPapersDto = new CallForPapersRequestDto(
+                startDate,
+                endDate,
+                topics,
+                "Guidelines instruction");
+        callForPapers.setTopics(topics);
+        callForPapers.setConference(conference);
+        return callForPapersDto;
+    }
+
+    @Test
 	void shouldFindCFPByConferenceId() {
-		// when
-		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.of(conference));
-		when(callForPapersRepository.findByConference(conference)).thenReturn(Optional.of(callForPapers));
-		ArgumentCaptor<Long> conferenceIdArgumentCaptor = ArgumentCaptor.forClass(Long.class);
-		ArgumentCaptor<Conference> conferenceArgumentCaptor = ArgumentCaptor.forClass(Conference.class);
+        // Given
+        Long conferenceId = 1L;
+        var callForPapersProjection = new CallForPapersProjectionImpl(callForPapers);
 
-		Optional<CallForPapers> optionalCFP = underTest.findByConferenceId(conference.getId());
+		// when
+		when(callForPapersRepository.findByConference(any()))
+                .thenReturn(Optional.of(callForPapersProjection));
+
+		Optional<CallForPapersDto> optionalCFP = underTest.findByConferenceId(conference.getId());
 
 		// then
-		assertThat(optionalCFP).isNotEmpty();
-		verify(conferenceRepository).findById(conferenceIdArgumentCaptor.capture());
-		assertThat(conferenceIdArgumentCaptor.getValue()).isEqualTo(conference.getId());
-
-		verify(callForPapersRepository).findByConference(conferenceArgumentCaptor.capture());
-		assertThat(conferenceArgumentCaptor.getValue()).isEqualTo(conference);
-
-	}
-
-	@Test
-	void shouldCheckIfCFPExists() {
-		// when
-		when(conferenceRepository.findById(conference.getId())).thenReturn(Optional.of(conference));
-		when(callForPapersRepository.existsByConference(conference)).thenReturn(true);
-		boolean exists = underTest.existsByConferenceId(conference.getId());
-		ArgumentCaptor<Long> idArgumentCaptor = ArgumentCaptor.forClass(Long.class);
-		ArgumentCaptor<Conference> conferenceArgumentCaptor = ArgumentCaptor.forClass(Conference.class);
-
-		// then
-		assertThat(exists).isEqualTo(true);
-		verify(conferenceRepository).findById(idArgumentCaptor.capture());
-		assertThat(idArgumentCaptor.getValue()).isEqualTo(conference.getId());
-		verify(callForPapersRepository).existsByConference(conferenceArgumentCaptor.capture());
-		assertThat(conferenceArgumentCaptor.getValue()).isEqualTo(conference);
-
+        assertThat(optionalCFP)
+                .isPresent()
+                .hasValueSatisfying( cfp -> {
+                    assertThat(cfp.guidelines()).isEqualTo(callForPapers.getGuidelines());
+                    assertThat(cfp.startDate()).isEqualTo(callForPapers.getStartDate());
+                    assertThat(cfp.endDate()).isEqualTo(callForPapers.getEndDate());
+                    assertThat(cfp.topics()).hasSameSizeAs(topics);
+                });
 	}
 
 }

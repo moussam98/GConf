@@ -14,6 +14,7 @@ import com.ensao.gi4.service.exception.UserNotFoundException;
 import com.ensao.gi4.utils.MessageSourceUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Locale;
@@ -66,6 +67,7 @@ public class ConferenceServiceImpl implements ConferenceService {
     }
 
 	@Override
+	@Transactional
 	public void deleteById(Long id) {
 		conferenceRepository.deleteById(id);
 	}

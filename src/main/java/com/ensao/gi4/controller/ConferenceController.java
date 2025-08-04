@@ -29,7 +29,8 @@ record ConferenceController(ConferenceService conferenceService, MessageSourceUt
 	@DeleteMapping("/{id}")
 	public ResponseEntity<String> deleteConferenceById(@PathVariable Long id){
 		conferenceService.deleteById(id);
-		return  ResponseEntity.ok(messageSourceUtils.getMessage("organizer.conference.deleted"));
+		return  ResponseEntity.ok(messageSourceUtils.getMessage("organizer.conference.deleted",
+				new Object[]{id}));
 	}
 
 }

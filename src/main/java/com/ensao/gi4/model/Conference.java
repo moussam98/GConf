@@ -44,7 +44,7 @@ public class Conference {
 	@JoinColumn(name = "owner_Id")
 	@JsonManagedReference
 	private User owner;
-	@OneToOne(mappedBy = "conference")
+	@OneToOne(mappedBy = "conference", cascade = CascadeType.ALL, orphanRemoval = true)
 	@JsonBackReference
 	private CallForPapers callForPapers;
 

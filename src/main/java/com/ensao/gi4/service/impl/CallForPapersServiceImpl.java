@@ -1,109 +1,43 @@
 package com.ensao.gi4.service.impl;
 
+import com.ensao.gi4.dto.CallForPapersDto;
 import com.ensao.gi4.dto.CallForPapersRequestDto;
 import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.CallForPapers;
 import com.ensao.gi4.model.Conference;
-import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.CallForPapersRepository;
-import com.ensao.gi4.repository.ConferenceRepository;
 import com.ensao.gi4.service.api.CallForPapersService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import jakarta.persistence.Tuple;
-import lombok.AllArgsConstructor;
+import com.ensao.gi4.service.api.ConferenceService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
-@AllArgsConstructor
-public class CallForPapersServiceImpl implements CallForPapersService {
+public record CallForPapersServiceImpl(
+		CallForPapersRepository callForPapersRepository,
+		ConferenceService conferenceService
+) implements CallForPapersService {
 
-	private final CallForPapersRepository callForPapersRepository;
-	private final ConferenceRepository conferenceRepository;
 
 
 	@Override
-	public Optional<CallForPapers> add(CallForPapersRequestDto callForPapersRequestDto, Long conferenceId) throws JsonProcessingException {
-
-		Optional<Conference> optionalConference = conferenceRepository.findById(conferenceId);
-		boolean exists = optionalConference.isPresent();
-
-		if (exists) {
-			CallForPapers callForPapers = Mapper.toCallForPapers(callForPapersRequestDto);
-			callForPapers.setConference(optionalConference.get());
-			callForPapersRepository.save(callForPapers);
-			
-			return Optional.of(callForPapers);
-		} else {
-			return Optional.empty();
-		}
-
+	public Optional<CallForPapersDto> add(CallForPapersRequestDto callForPapersRequestDto, Long conferenceId){
+		return conferenceService.findById(conferenceId)
+				.map(conferenceDto -> {
+					CallForPapers callForPapers = Mapper.toCallForPapers(callForPapersRequestDto);
+					var conference = new Conference();
+					conference.setId(conferenceId);
+					callForPapers.setConference(conference);
+					return Mapper.toCallForPapersDto(callForPapersRepository.save(callForPapers));
+                });
 	}
 
 	@Override
-	public Optional<CallForPapers> findByConferenceId(Long conferenceId) {
-		
-		List<Tuple> tuples = callForPapersRepository.findCfpById(conferenceId);
-		CallForPapers callForPapers; 
-
-		if (!tuples.isEmpty()) {
-			callForPapers = mappedCallForPapers(tuples);
-			return Optional.of(callForPapers);
-		}else {
-			
-			Optional<Conference> optionalConference = conferenceRepository.findById(conferenceId);
-			boolean exists = optionalConference.isPresent(); 
-	
-			return exists ? callForPapersRepository.findByConference(optionalConference.get()) : Optional.empty();
-		}
-
-	}
-
-	@Override
-	public boolean existsByConferenceId(Long conferenceId) {
-		
-		Optional<Conference> optionalConference = conferenceRepository.findById(conferenceId);
-
-        return optionalConference.filter(callForPapersRepository::existsByConference).isPresent();
-
-    }
-	
-	private CallForPapers mappedCallForPapers(List<Tuple> tuples) {
-		CallForPapers callForPapers;
-		Conference conference;
-		callForPapers = tuples.getFirst().get(0, CallForPapers.class);
-		for (Tuple tuple : tuples) {
-			if (tuple.get(1) != null) {
-				conference = conferenceMapper(tuple);
-				callForPapers.setConference(conference);
-			}
-		}
-		return callForPapers;
-	}
-
-	private Conference conferenceMapper(Tuple tuple) {
-		Conference conference;
-		conference = new Conference();
-		conference.setId(tuple.get(1, Long.class));
-		conference.setName(tuple.get(2, String.class));
-		conference.setAcronym(tuple.get(3, String.class));
-		conference.setVenue(tuple.get(4, String.class));
-		conference.setCity(tuple.get(5, String.class));
-		conference.setCountry(tuple.get(6, String.class));
-		conference.setStartDate(tuple.get(7, LocalDate.class));
-		conference.setEndDate(tuple.get(8, LocalDate.class));
-		conference.setPrimaryArea(tuple.get(9, String.class));
-		conference.setSecondaryArea(tuple.get(10, String.class));
-		conference.setOrganizer(tuple.get(11, String.class));
-		conference.setPhoneNumber(tuple.get(12, String.class));
-		conference.setOtherInfo(tuple.get(13, String.class));
-		conference.setOwner(tuple.get(14, User.class));
-		return conference;
+	public Optional<CallForPapersDto> findByConferenceId(Long conferenceId) {
+		var conference = new Conference();
+		conference.setId(conferenceId);
+		return callForPapersRepository.findByConference(conference)
+				.map(Mapper::toCallForPapersDto);
 	}
 
 }
