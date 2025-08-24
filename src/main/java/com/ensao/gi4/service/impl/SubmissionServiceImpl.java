@@ -1,21 +1,24 @@
 package com.ensao.gi4.service.impl;
 
 import com.ensao.gi4.dto.ConferenceDto;
+import com.ensao.gi4.dto.SubmissionDto;
 import com.ensao.gi4.dto.SubmissionRequestDto;
-import com.ensao.gi4.dto.UserDto;
 import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.Conference;
-import com.ensao.gi4.model.Document;
 import com.ensao.gi4.model.Submission;
 import com.ensao.gi4.repository.SubmissionRepository;
-import com.ensao.gi4.service.api.*;
-import jakarta.persistence.Tuple;
+import com.ensao.gi4.service.api.AuthorsService;
+import com.ensao.gi4.service.api.ConferenceService;
+import com.ensao.gi4.service.api.DocumentService;
+import com.ensao.gi4.service.api.SubmissionService;
+import com.ensao.gi4.service.exception.ConferenceNotFoundException;
+import com.ensao.gi4.utils.MessageSourceUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,38 +31,32 @@ public class SubmissionServiceImpl implements SubmissionService {
 	private final ConferenceService conferenceService;
 	private final DocumentService documentService;
 	private final AuthorsService authorService;
-	private final UserService userService;
+	private final MessageSourceUtils messageSourceUtils;
 
 	@Override
-	public Long add(SubmissionRequestDto submissionRequestDto, Long userId) throws IOException {
-		return userService.findById(userId)
-				.map(user -> saveSubmissionIfConferenceExists(user, submissionRequestDto))
-				.orElse(-1L);
+	public SubmissionDto createByConferenceId(Long conferenceId, SubmissionRequestDto submissionRequestDto){
+		return conferenceService.findById(conferenceId)
+				.map(conferenceDto -> saveSubmissionIfConferenceExists(conferenceDto, submissionRequestDto))
+				.orElseThrow(() -> new ConferenceNotFoundException(messageSourceUtils
+						.getMessage("participant.conference.not_found")));
 	}
 
 	@Override
-	public Optional<Submission> findById(Long id) {
-		List<Tuple> tuples = submissionRepository.findSubmissionById(id);
-		
-		if (!tuples.isEmpty()) {
-			Submission submission = submissionMapper(tuples);
-			return Optional.of(submission);
-		}
-
-		return Optional.empty();
+	public Optional<SubmissionDto> findById(Long id) {
+		return submissionRepository.findSubmissionById(id)
+				.map(Mapper::toSubmissionDto);
 	}
 
 	@Override
-	public Optional<List<Submission>> findAllSubmission() {
-		
-		List<Tuple> tuples = submissionRepository.findAllSubmission();
-		List<Submission> submissions = submissionsMapper(tuples);
-	
-		return Optional.of(submissions);
+	public List<SubmissionDto> listByConferenceId(Long conferenceId) {
+		var conference= new Conference();
+		conference.setId(conferenceId);
+		return submissionRepository.findSubmissionsByConference(conference)
+				.stream().map(Mapper::toSubmissionDto).toList();
 	}
 
 	@Override
-	public Boolean evaluateSubmission(Long submissionId, Boolean isValidate) {
+	public Boolean evaluate(Long submissionId, Boolean isValidate) {
 		
 		Optional<Submission> optionalSubmission = submissionRepository.findById(submissionId);
 		
@@ -78,63 +75,14 @@ public class SubmissionServiceImpl implements SubmissionService {
 		submissionRepository.deleteById(id);
 		return true;
 	}
-	
-	private List<Submission> submissionsMapper(List<Tuple> tuples) {
-		List<Submission> submissions = new ArrayList<>(); 
-		
-		for (Tuple tuple : tuples) {
-			Submission submission = submissionMapper(tuple);
-			submissions.add(submission);
-		}
-		return submissions;
-	}
 
-	private Submission submissionMapper(Tuple tuple) {
-		Submission submission = tuple.get(0, Submission.class); 
-		if (tuple.get(1) != null) {
-			Document document = documentMapper(tuple);
-			submission.setDocument(document);
+	private SubmissionDto saveSubmissionIfConferenceExists(ConferenceDto conferenceDto,
+														   SubmissionRequestDto submissionRequestDto){
+		try {
+			return Mapper.toSubmissionDto(saveSubmission(conferenceDto, submissionRequestDto));
+		}catch (IOException e){
+			throw new IllegalStateException("Error while saving submission: " +  e.getMessage());
 		}
-		return submission;
-	}
-	
-	private Submission submissionMapper(List<Tuple> tuples) {
-		Submission submission = tuples.getFirst().get(0, Submission.class);
-		if (tuples.getFirst().get(1) != null) {
-			Document document = documentMapper(tuples);
-			submission.setDocument(document);
-		}
-		return submission;
-	}
-
-	private Document documentMapper(Tuple tuple) {
-		Document document;
-		document = new Document(); 
-		document.setId(tuple.get(1, Long.class));
-		document.setFilename(tuple.get(2, String.class));
-		document.setFileType(tuple.get(3, String.class));
-		return document;
-	}
-
-	private Document documentMapper(List<Tuple> tuples) {
-		Document document;
-		document = new Document();
-		document.setId(tuples.getFirst().get(1, Long.class));
-		document.setFilename(tuples.getFirst().get(2, String.class));
-		document.setFileType(tuples.getFirst().get(3, String.class));
-		return document;
-	}
-	
-	private Long saveSubmissionIfConferenceExists(UserDto userDto, SubmissionRequestDto submissionRequestDto){
-		return conferenceService.findByOwnerId(userDto.id())
-				.map(conference -> {
-                    try {
-                        return saveSubmission(conference, submissionRequestDto).getId();
-                    } catch (IOException e) {
-                        throw new IllegalStateException("Error while saving submission: " +  e.getMessage());
-                    }
-                })
-				.orElse(-1L);
 	}
 
 	private Submission saveSubmission(ConferenceDto conferenceDto, SubmissionRequestDto submissionRequestDto)
@@ -144,6 +92,11 @@ public class SubmissionServiceImpl implements SubmissionService {
 		Conference conference = new Conference();
 		conference.setId(conferenceDto.id());
 		submission.setConference(conference);
+		submission.getAuthors().forEach(author -> {
+			Instant instant = Instant.now();
+			author.setCreatedAt(instant);
+			author.setUpdatedAt(instant);
+		});
 		authorService.addAll(submission.getAuthors());
 		submissionRepository.save(submission);
 		return submission;

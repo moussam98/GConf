@@ -1,6 +1,6 @@
 package com.ensao.gi4.controller;
 
-import com.ensao.gi4.model.Document;
+import com.ensao.gi4.dto.DocumentMetadataDto;
 import com.ensao.gi4.service.api.DocumentService;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
@@ -29,8 +29,8 @@ record DocumentController(DocumentService documentService)  {
 	}
 	
 	@GetMapping("/{id}/metadata")
-	public ResponseEntity<Document> getDocument(@PathVariable Long id){
-        return documentService.findById(id)
+	public ResponseEntity<DocumentMetadataDto> getDocument(@PathVariable Long id){
+        return documentService.findDocumentMetadataById(id)
 				.map(ResponseEntity::ok)
 				.orElse(ResponseEntity.notFound().build());
 	}

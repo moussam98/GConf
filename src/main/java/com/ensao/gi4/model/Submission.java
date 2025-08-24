@@ -26,13 +26,13 @@ public class Submission {
 	@Convert(converter = StringSetConverter.class)
 	@Column(name = "keywords", nullable = false)
 	private Set<String> keywords = new HashSet<>();
-	@OneToOne
+	@OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
 	private Document document;
 	@ManyToOne
 	@JoinColumn(name = "conference_id", nullable = false)
 	@JsonBackReference
 	private Conference conference;
-	@OneToMany
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Author> authors; 
 	private Boolean isEvaluate = false; 
 	private Boolean isValidate = false; 

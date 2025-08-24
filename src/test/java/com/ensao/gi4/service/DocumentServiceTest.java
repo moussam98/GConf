@@ -1,11 +1,9 @@
 package com.ensao.gi4.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Optional;
-
+import com.ensao.gi4.model.Document;
+import com.ensao.gi4.repository.DocumentRepository;
+import com.ensao.gi4.service.api.DocumentService;
+import com.ensao.gi4.service.impl.DocumentServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,10 +12,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 
-import com.ensao.gi4.model.Document;
-import com.ensao.gi4.repository.DocumentRepository;
-import com.ensao.gi4.service.api.DocumentService;
-import com.ensao.gi4.service.impl.DocumentServiceImpl;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class DocumentServiceTest {
@@ -39,21 +39,26 @@ public class DocumentServiceTest {
 
 	@Test
 	void shouldAddDocument() {
+		// Given
+		when(documentRepository.save(any())).thenReturn(document);
 		// when 
-		int actualResult = underTest.add(document); 
+		var actualResult = underTest.add(document);
 		ArgumentCaptor<Document> documentArgumentCaptor = ArgumentCaptor.forClass(Document.class); 
 		
 		// then 
-		assertThat(actualResult).isEqualTo(1);
-		verify(documentRepository).save(documentArgumentCaptor.capture()); 
+		assertThat(actualResult.filename()).isEqualTo(document.getFilename());
+		assertThat(actualResult.fileType()).isEqualTo(document.getFileType());
+		verify(documentRepository).save(documentArgumentCaptor.capture());
 		assertThat(documentArgumentCaptor.getValue()).isEqualTo(document); 
 	}
 	
 	@Test
 	void shouldFindDocumentById() {
+		// Given
+		long documentId = 1L;
 		// when
-		when(documentRepository.findById(document.getId())).thenReturn(Optional.of(document)); 
-		Optional<Document> documentOptional = underTest.findById(document.getId()); 
+		when(documentRepository.findById(documentId)).thenReturn(Optional.of(document));
+		Optional<Document> documentOptional = underTest.findById(documentId);
 		
 		// then 
 		assertThat(documentOptional).isNotEmpty(); 

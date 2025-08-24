@@ -2,14 +2,22 @@ package com.ensao.gi4.controller;
 
 import com.ensao.gi4.dto.ConferenceDto;
 import com.ensao.gi4.dto.ConferencePatchDto;
+import com.ensao.gi4.dto.SubmissionDto;
+import com.ensao.gi4.dto.SubmissionRequestDto;
 import com.ensao.gi4.service.api.ConferenceService;
+import com.ensao.gi4.service.api.SubmissionService;
 import com.ensao.gi4.utils.MessageSourceUtils;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/conferences")
-record ConferenceController(ConferenceService conferenceService, MessageSourceUtils messageSourceUtils) {
+record ConferenceController(ConferenceService conferenceService,
+							MessageSourceUtils messageSourceUtils,
+							SubmissionService submissionService) {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<ConferenceDto> getConferenceById(@PathVariable Long id){
@@ -31,6 +39,17 @@ record ConferenceController(ConferenceService conferenceService, MessageSourceUt
 		conferenceService.deleteById(id);
 		return  ResponseEntity.ok(messageSourceUtils.getMessage("organizer.conference.deleted",
 				new Object[]{id}));
+	}
+
+	@GetMapping("/{conferenceId}/submissions")
+	public ResponseEntity<List<SubmissionDto>> getSubmissionsByConferenceId(@PathVariable Long conferenceId) {
+		return ResponseEntity.ok(submissionService.listByConferenceId(conferenceId));
+	}
+
+	@PostMapping(value = "/{conferenceId}/submissions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<SubmissionDto> addSubmission(@PathVariable Long conferenceId,
+													   @ModelAttribute SubmissionRequestDto submissionRequestDto){
+		return ResponseEntity.ok(submissionService.createByConferenceId(conferenceId, submissionRequestDto));
 	}
 
 }

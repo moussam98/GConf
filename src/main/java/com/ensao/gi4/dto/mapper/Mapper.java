@@ -2,25 +2,16 @@ package com.ensao.gi4.dto.mapper;
 
 import com.ensao.gi4.dto.*;
 import com.ensao.gi4.model.*;
-import com.ensao.gi4.projection.CallForPapersProjection;
-import com.ensao.gi4.projection.ConferenceProjection;
-import com.ensao.gi4.projection.UserProjection;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ensao.gi4.projection.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 // TODO: find a new way to map a bean DTO. Use a library
 // TODO: Handle null safety, explore about Jspecify
 public class Mapper {
-
-	private static final ObjectMapper objectMapper = new ObjectMapper();
 
 	public static Submission toSubmission(SubmissionRequestDto submissionRequestDto) throws IOException {
         return submissionMapper(submissionRequestDto);
@@ -33,17 +24,46 @@ public class Mapper {
 				submission.getTitle(),
 				submission.getDescription(),
 				submission.getKeywords(),
-				submission.getDocument().getId(),
-				submission.getConference().getId(),
+				Mapper.toDocumentMetadataDto(submission.getDocument()),
 				submission.getAuthors().stream().map(Mapper::toAuthorDto).toList(),
 				submission.getIsEvaluate(),
 				submission.getIsValidate()
 		);
 	}
 
+	public static SubmissionDto toSubmissionDto(SubmissionProjection submissionProjection){
+        return new SubmissionDto(
+				submissionProjection.getId(),
+				submissionProjection.getTitle(),
+				submissionProjection.getDescription(),
+				submissionProjection.getKeywords(),
+				Mapper.toDocumentMetadataDto(submissionProjection.getDocument()),
+				submissionProjection.getAuthors().stream().map(Mapper::toAuthorDto).toList(),
+				submissionProjection.getIsEvaluate(),
+				submissionProjection.getIsValidate()
+		);
+	}
+
+	public static DocumentMetadataDto toDocumentMetadataDto(DocumentProjection documentProjection){
+		return new DocumentMetadataDto(
+				documentProjection.getId(),
+				documentProjection.getFilename(),
+				documentProjection.getFileType(),
+				documentProjection.getSizeInBytes()
+		);
+	}
+
+	public static DocumentMetadataDto toDocumentMetadataDto(Document document){
+		return new DocumentMetadataDto(
+				document.getId(),
+				document.getFilename(),
+				document.getFileType(),
+				document.getSizeInBytes()
+		);
+	}
+
 	private static AuthorDto toAuthorDto(Author author) {
 		return new AuthorDto(
-//				author.getId(),
 				author.getFirstName(),
 				author.getLastName(),
 				author.getEmail(),
@@ -51,9 +71,17 @@ public class Mapper {
 				author.getOrganization());
 	}
 
+	private static AuthorDto toAuthorDto(AuthorProjection authorProjection) {
+		return new AuthorDto(
+				authorProjection.getFirstName(),
+				authorProjection.getLastName(),
+				authorProjection.getEmail(),
+				authorProjection.getCountry(),
+				authorProjection.getOrganization());
+	}
+
 	private static Author toAuthor(AuthorDto authorDto) {
 		Author author = new Author();
-//		author.setId(authorDto.id());
 		author.setFirstName(authorDto.firstName());
 		author.setLastName(authorDto.lastName());
 		author.setEmail(authorDto.email());
@@ -185,8 +213,8 @@ public class Mapper {
 	private static CallForPapers callForPapersMapper(CallForPapersRequestDto callForPapersRequestDto) {
 		CallForPapers callForPapers = new CallForPapers();
 
-		callForPapers.setStartDate(getDate(callForPapersRequestDto.getStartDate().trim()));
-		callForPapers.setEndDate(getDate(callForPapersRequestDto.getEndDate().trim()));
+		callForPapers.setStartDate(callForPapersRequestDto.getStartDate());
+		callForPapers.setEndDate(callForPapersRequestDto.getEndDate());
 		callForPapers.setTopics(callForPapersRequestDto.getTopics());
 		callForPapers.setGuidelines(callForPapersRequestDto.getGuidelines().trim());
 		return callForPapers;
@@ -219,26 +247,15 @@ public class Mapper {
 		return conference;
 	}
 
-	private static LocalDate getDate(String date) {
-		if (Objects.isNull(date)){
-			return null;
-		}
-
-		String[] splitDate = date.split("/");
-		
-		int year = Integer.parseInt(splitDate[2]);
-		int month = Integer.parseInt(splitDate[1]);
-		int dayOfMonth = Integer.parseInt(splitDate[0]);
-
-        return LocalDate.of(year, month, dayOfMonth);
-	}
-	
 	private static Submission submissionMapper(SubmissionRequestDto submissionRequestDto) throws IOException {
 		Submission submission = new Submission();
 		submission.setTitle(submissionRequestDto.title());
 		submission.setDescription(submissionRequestDto.description());
 		submission.setKeywords(submissionRequestDto.keywords());
-		submission.setAuthors(getAuthors(submissionRequestDto.authors()));
+		List<Author> authors = submissionRequestDto.authors() != null ?
+				submissionRequestDto.authors().stream().map(Mapper::toAuthor).toList()
+				: Collections.emptyList();
+		submission.setAuthors(authors);
 		submission.setDocument(generateDocument(submissionRequestDto.document()));
 
 		return submission;
@@ -249,19 +266,8 @@ public class Mapper {
 		document.setFilename(file.getOriginalFilename());
 		document.setFileType(file.getContentType());
 		document.setData(file.getBytes());
+		document.setSizeInBytes(file.getSize());
 		return document;
 	}
-
-	private static List<Author> getAuthors(String authors) throws JsonProcessingException {
-        return objectMapper.reader().forType(new TypeReference<List<Author>>() {
-        }).readValue(authors);
-	}
-
-//	private static Set<Keyword> getKeywords(SubmissionDto submissionDto) {
-//		String[] data = submissionDto.getKeywords().split("\n");
-//		Set<Keyword> keywordSubmission = new HashSet<>();
-//		Arrays.stream(data).forEach((keyword -> keywordSubmission.add(new Keyword(null, keyword.trim()))));
-//		return keywordSubmission;
-//	}
 
 }

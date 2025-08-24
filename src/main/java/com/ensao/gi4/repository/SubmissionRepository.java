@@ -1,22 +1,17 @@
 package com.ensao.gi4.repository;
 
-import java.util.List;
-
-import jakarta.persistence.Tuple;
-
+import com.ensao.gi4.model.Conference;
+import com.ensao.gi4.model.Submission;
+import com.ensao.gi4.projection.SubmissionProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.ensao.gi4.model.Submission;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
-	@Query("SELECT sub, doc.id, doc.filename, doc.fileType "
-			+ "FROM Submission sub LEFT JOIN sub.document doc WHERE sub.id = :id")
-	List<Tuple> findSubmissionById(Long id);
-
-	@Query("SELECT sub, doc.id, doc.filename, doc.fileType FROM Submission sub LEFT JOIN sub.document doc")
-	List<Tuple> findAllSubmission();
+	Optional<SubmissionProjection> findSubmissionById(Long id);
+	List<SubmissionProjection> findSubmissionsByConference(Conference conference);
 }

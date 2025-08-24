@@ -8,8 +8,7 @@ public record SubmissionDto(
         String title,
         String description,
         Set<String> keywords,
-        Long documentId,
-        Long conferenceId,
+        DocumentMetadataDto document,
         List<AuthorDto> authors,
         Boolean isEvaluate,
         Boolean isValidate) {

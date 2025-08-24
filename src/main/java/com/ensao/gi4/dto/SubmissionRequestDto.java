@@ -2,6 +2,7 @@ package com.ensao.gi4.dto;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Set;
 
 public record SubmissionRequestDto(
@@ -9,6 +10,6 @@ public record SubmissionRequestDto(
 	String description,
 	MultipartFile document,
 	Set<String> keywords,
-	String authors){
+	List<AuthorDto> authors){
 
 }

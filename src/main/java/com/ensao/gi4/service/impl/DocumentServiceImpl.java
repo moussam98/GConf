@@ -1,30 +1,35 @@
 package com.ensao.gi4.service.impl;
 
+import com.ensao.gi4.dto.DocumentMetadataDto;
+import com.ensao.gi4.dto.mapper.Mapper;
 import com.ensao.gi4.model.Document;
 import com.ensao.gi4.repository.DocumentRepository;
 import com.ensao.gi4.service.api.DocumentService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
 @Service
-@Transactional
 @AllArgsConstructor
 public class DocumentServiceImpl implements DocumentService {
 
 	private final DocumentRepository documentRepository;
 	
 	@Override
-	public int add(Document document) {
-		documentRepository.save(document);
-		return 1;
+	public DocumentMetadataDto add(Document document) {
+		return Mapper.toDocumentMetadataDto(documentRepository.save(document));
 	}
 
 	@Override
-	public Optional<Document> findById(Long fileId) {
-		return documentRepository.findById(fileId);
+	public Optional<Document> findById(Long id) {
+		return documentRepository.findById(id);
+	}
+
+	@Override
+	public Optional<DocumentMetadataDto> findDocumentMetadataById(Long documentId) {
+		return documentRepository.findDocumentMetadataById(documentId)
+				.map(Mapper::toDocumentMetadataDto);
 	}
 
 	@Override

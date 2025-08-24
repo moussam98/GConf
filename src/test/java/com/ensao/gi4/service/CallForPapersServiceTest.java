@@ -70,7 +70,7 @@ public class CallForPapersServiceTest {
 		callForPapers.setGuidelines("Guidelines instruction");
 		callForPapers.setTopics(topics);
 
-        callForPapersRequestDto = createCallForPapersDto("10/04/2022", "30/04/2022");
+        callForPapersRequestDto = createCallForPapersDto();
 	}
 
     private User createUser() {
@@ -106,7 +106,7 @@ public class CallForPapersServiceTest {
 	@Test
 	void shouldNotAddCFP() {
 		// given
-        var callForPapersDto = createCallForPapersDto("10/04/2022", "30/04/2022");
+        var callForPapersDto = createCallForPapersDto();
 
         // when
 		when(conferenceService.findById(conference.getId())).thenReturn(Optional.empty());
@@ -117,10 +117,10 @@ public class CallForPapersServiceTest {
 
 	}
 
-    private CallForPapersRequestDto createCallForPapersDto(String startDate, String endDate) {
+    private CallForPapersRequestDto createCallForPapersDto() {
         var callForPapersDto = new CallForPapersRequestDto(
-                startDate,
-                endDate,
+                LocalDate.parse("2022-04-10"),
+                LocalDate.parse("2022-04-30"),
                 topics,
                 "Guidelines instruction");
         callForPapers.setTopics(topics);
@@ -138,7 +138,7 @@ public class CallForPapersServiceTest {
 		when(callForPapersRepository.findByConference(any()))
                 .thenReturn(Optional.of(callForPapersProjection));
 
-		Optional<CallForPapersDto> optionalCFP = underTest.findByConferenceId(conference.getId());
+		Optional<CallForPapersDto> optionalCFP = underTest.findByConferenceId(conferenceId);
 
 		// then
         assertThat(optionalCFP)

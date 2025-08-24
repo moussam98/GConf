@@ -18,6 +18,7 @@ public class Document {
 	private Long id;
 	private String filename;
 	private String fileType;
+	private Long sizeInBytes;
 	@Lob
 	private byte[] data; 
 
