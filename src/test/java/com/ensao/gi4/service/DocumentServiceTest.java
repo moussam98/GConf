@@ -1,5 +1,6 @@
 package com.ensao.gi4.service;
 
+import com.ensao.gi4.dto.mapper.DocumentMapper;
 import com.ensao.gi4.model.Document;
 import com.ensao.gi4.repository.DocumentRepository;
 import com.ensao.gi4.service.api.DocumentService;
@@ -29,7 +30,7 @@ public class DocumentServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		underTest = new DocumentServiceImpl(documentRepository);
+		underTest = new DocumentServiceImpl(documentRepository, DocumentMapper.INSTANCE);
 		document = new Document();
 		document.setFilename("Test.pdf");
 		document.setFileType(MediaType.APPLICATION_PDF_VALUE);

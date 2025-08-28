@@ -3,7 +3,7 @@ package com.ensao.gi4.service.impl;
 import com.ensao.gi4.dto.UserDto;
 import com.ensao.gi4.dto.UserPatchDto;
 import com.ensao.gi4.dto.UserRequestDto;
-import com.ensao.gi4.dto.mapper.Mapper;
+import com.ensao.gi4.dto.mapper.UserMapper;
 import com.ensao.gi4.model.Role;
 import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.UserRepository;
@@ -22,17 +22,21 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 @Service
+
 public class UserServiceImpl implements UserService {
 
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final MessageSourceUtils messageSourceUtils;
+	private final UserMapper userMapper;
+
 
 	public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
-						   MessageSourceUtils messageSourceUtils) {
+						   MessageSourceUtils messageSourceUtils, UserMapper userMapper) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.messageSourceUtils = messageSourceUtils;
+		this.userMapper = userMapper;
 	}
 
 	@Override
@@ -45,33 +49,50 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserDto register(UserRequestDto userRequestDto) {
+	public UserDto create(UserRequestDto userRequestDto) {
 		if (userRepository.findByEmail(userRequestDto.email()).isPresent()){
 			throw new IllegalArgumentException(messageSourceUtils.getMessage("error.user.email.duplication",
 					new Object[]{userRequestDto.email()}));
 		}
 
-		User user = Mapper.toUser(userRequestDto);
+		User user = new User();
+		user.setFirstName(userRequestDto.firstName());
+		user.setLastName(userRequestDto.lastName());
+		user.setEmail(userRequestDto.email());
 		user.setPassword(passwordEncoder.encode(userRequestDto.password()));
 		user.setRole(Role.ADMIN);
 		user.setCreatedAt(Instant.now());
 		user.setUpdatedAt(Instant.now());
-		return Mapper.toUserDto(userRepository.save(user));
+		return userMapper.toUserDto(userRepository.save(user));
 	}
 
 	@Override
 	public Optional<UserDto> findById(Long id) {
-		return userRepository.findById(id).map(Mapper::toUserDto);
+		return userRepository.findById(id).map(userMapper::toUserDto);
+	}
+
+	@Override
+	public UserDto getById(Long id) {
+		return findById(id).orElseThrow(
+				() -> new UserNotFoundException(messageSourceUtils.getMessage("organizer.account.not_found")));
 	}
 
 	@Override
 	public List<UserDto> findAll() {
-		return userRepository.findAll().stream().map(Mapper::toUserDto).toList();
+		return userRepository.findAll()
+				.stream().map(userMapper::toUserDto).toList();
 	}
 
 	@Override
 	public Optional<UserDto> findByEmail(String email) {
-		return userRepository.findByEmail(email).map(Mapper::toUserDto);
+		return userRepository.findByEmail(email).map(userMapper::toUserDto);
+	}
+
+	@Override
+	public UserDto getByEmail(String email) {
+		return userRepository.findByEmail(email)
+				.map(userMapper::toUserDto)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 	}
 
 	@Override
@@ -81,12 +102,12 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserDto update(UserPatchDto userPatchDto, String email) {
+	public UserDto patchByEmail(String email, UserPatchDto userPatchDto) {
 		User user = userRepository.findByEmail(email).orElseThrow(() ->
 				new UserNotFoundException(messageSourceUtils.getMessage("error.user.not_found", new Object[]{email})));
 
 		updateUserFields(user, userPatchDto);
-		return Mapper.toUserDto(userRepository.save(user));
+		return userMapper.toUserDto(userRepository.save(user));
 	}
 
 	private void updateUserFields(User target,UserPatchDto userPatchDto) {
@@ -113,14 +134,5 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	@Override
-	public List<User> saveAll(List<User> users) {
-		for (var user: users){
-			Instant instant = Instant.now();
-			user.setCreatedAt(instant);
-			user.setUpdatedAt(instant);
-		}
-		return userRepository.saveAll(users);
-	}
 
 }

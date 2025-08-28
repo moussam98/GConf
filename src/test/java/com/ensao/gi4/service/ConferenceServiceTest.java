@@ -4,7 +4,8 @@ import com.ensao.gi4.dto.ConferenceDto;
 import com.ensao.gi4.dto.ConferencePatchDto;
 import com.ensao.gi4.dto.ConferenceRequestDto;
 import com.ensao.gi4.dto.UserDto;
-import com.ensao.gi4.dto.mapper.Mapper;
+import com.ensao.gi4.dto.mapper.CallForPapersMapper;
+import com.ensao.gi4.dto.mapper.ConferenceMapper;
 import com.ensao.gi4.model.CallForPapers;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.model.Role;
@@ -23,7 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -43,27 +43,26 @@ public class ConferenceServiceTest {
 	private ConferenceService underTest;
 	private Conference conference;
 	private User owner;
-	private UserDto userDto;
 	private ConferenceRequestDto conferenceRequestDto;
 	private CallForPapers callForPapers;
 
     @BeforeEach
 	void setUp() {
-		underTest = new ConferenceServiceImpl(conferenceRepository, userService, messageSourceUtils);
+		underTest = new ConferenceServiceImpl(conferenceRepository, userService, messageSourceUtils,
+				ConferenceMapper.INSTANCE);
         conferenceRequestDto = createConferenceRequestDto();
 		conference = createConference();
         owner = createUser();
 		conference.setOwner(owner);
 		callForPapers = createCallForPapers();
 		conference.setCallForPapers(callForPapers);
-		userDto = Mapper.toUserDto(owner);
 	}
 
 	@Test
 	void shouldAddConference() {
 		// given
-		Conference conference = Mapper.toConference(conferenceRequestDto);
 		Long userId = 1L;
+		Conference conference = ConferenceMapper.INSTANCE.toConference(conferenceRequestDto, userId);
 
 		Conference savedconference = new Conference();
 		savedconference.setName("International Conference");
@@ -74,7 +73,7 @@ public class ConferenceServiceTest {
 		// when
 		when(conferenceRepository.existsByNameAndAcronym(conference.getName(),conference.getAcronym()))
 				.thenReturn(false);
-		when(userService.findById(userId)).thenReturn(Optional.of(userDto));
+		when(userService.getById(userId)).thenReturn(createUserDto());
 		when(conferenceRepository.save(any())).thenReturn(savedconference);
 
 		ArgumentCaptor<String> currentStringArgumentCaptor = ArgumentCaptor.forClass(String.class);
@@ -93,7 +92,7 @@ public class ConferenceServiceTest {
 		assertThat(currentStringArgumentCaptor.getValue()).isEqualTo(conference.getName());
 		assertThat(acronymArgumentCaptor.getValue()).isEqualTo(conference.getAcronym());
 
-		verify(userService, times(1)).findById(userIdArgumentCaptor.capture());
+		verify(userService, times(1)).getById(userIdArgumentCaptor.capture());
 		assertThat(userIdArgumentCaptor.getValue()).isEqualTo(owner.getId());
 	}
 
@@ -110,7 +109,7 @@ public class ConferenceServiceTest {
 	@Test
 	void shouldReturnConferenceIfExists() {
         // Given
-        var conferenceDto = Mapper.toConferenceDto(conference);
+        var conferenceDto = ConferenceMapper.INSTANCE.toConferenceDto(conference);
 		var conferenceProjection = new ConferenceProjectionImpl(conference);
         // when
         Long conferenceId = 1L;
@@ -143,7 +142,6 @@ public class ConferenceServiceTest {
 	void shouldUpdateConferenceById() {
         // Given
         var conferencePatchDto = createConferencePatchDto();
-        var conferenceDto = createConferenceDto();
 		Long conferenceId = 1L;
         // when
 		when(conferenceRepository.findById(conferenceId)).thenReturn(Optional.of(conference));
@@ -161,7 +159,8 @@ public class ConferenceServiceTest {
 				.hasValueSatisfying( conf -> {
 					assertThat(conf.name()).isEqualTo(conference.getName());
 					assertThat(conf.city()).isEqualTo(conference.getCity());
-					assertThat(conf.callForPapers()).isEqualTo(Mapper.toCallForPapersDto(conference.getCallForPapers()));
+					assertThat(conf.callForPapers()).isEqualTo(CallForPapersMapper.INSTANCE
+							.toCallForPapersDto(conference.getCallForPapers()));
 				});
 	}
 
@@ -201,6 +200,11 @@ public class ConferenceServiceTest {
         return owner;
     }
 
+    private UserDto createUserDto() {
+        return new UserDto(1L, "Ali", "Moussa", "ali@gmail.com", Role.ADMIN,
+				Instant.now(), Instant.now());
+    }
+
     private Conference createConference() {
         var conference =  new Conference(
                 "International Conference",
@@ -235,30 +239,6 @@ public class ConferenceServiceTest {
                 "organizeName",
                 "+55121131",
                 "Other info"
-        );
-    }
-
-    private static ConferenceDto createConferenceDto() {
-        return new ConferenceDto(
-                1L,
-                "International Conference",
-                "GConf",
-                "UMP",
-                "Oujda",
-                "Morocco",
-                LocalDate.now(),
-                LocalDate.now().plusDays(2),
-                "Computer Science",
-                "Artificial Intelligence",
-                "organizeName",
-                "+55121131",
-                "Other info",
-                Collections.emptyList(),
-                new UserDto(1L, "Ali", "Moussa", "ali@gmail.com",
-                        Role.ADMIN, Instant.now(), Instant.now()),
-                null,
-                Instant.now(),
-                Instant.now()
         );
     }
 

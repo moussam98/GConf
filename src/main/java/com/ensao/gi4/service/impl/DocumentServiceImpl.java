@@ -1,7 +1,7 @@
 package com.ensao.gi4.service.impl;
 
 import com.ensao.gi4.dto.DocumentMetadataDto;
-import com.ensao.gi4.dto.mapper.Mapper;
+import com.ensao.gi4.dto.mapper.DocumentMapper;
 import com.ensao.gi4.model.Document;
 import com.ensao.gi4.repository.DocumentRepository;
 import com.ensao.gi4.service.api.DocumentService;
@@ -15,10 +15,11 @@ import java.util.Optional;
 public class DocumentServiceImpl implements DocumentService {
 
 	private final DocumentRepository documentRepository;
+	private final DocumentMapper documentMapper;
 	
 	@Override
 	public DocumentMetadataDto add(Document document) {
-		return Mapper.toDocumentMetadataDto(documentRepository.save(document));
+		return documentMapper.toDocumentMetadataDto(documentRepository.save(document));
 	}
 
 	@Override
@@ -29,7 +30,7 @@ public class DocumentServiceImpl implements DocumentService {
 	@Override
 	public Optional<DocumentMetadataDto> findDocumentMetadataById(Long documentId) {
 		return documentRepository.findDocumentMetadataById(documentId)
-				.map(Mapper::toDocumentMetadataDto);
+				.map(documentMapper::toDocumentMetadataDto);
 	}
 
 	@Override

@@ -51,12 +51,12 @@ record UserController(UserService userService,
     @PatchMapping("{email}")
     public ResponseEntity<Object> updateUserByEmail(@PathVariable String email,
                                                     @Valid @RequestBody UserPatchDto userPatchDto) {
-        return ResponseEntity.ok(userService.update(userPatchDto, email));
+        return ResponseEntity.ok(userService.patchByEmail(email, userPatchDto));
     }
 
     @PostMapping
     public ResponseEntity<UserDto> register(@Valid @RequestBody UserRequestDto userDto) {
-        return ResponseEntity.ok(userService.register(userDto));
+        return ResponseEntity.ok(userService.create(userDto));
     }
 
 }

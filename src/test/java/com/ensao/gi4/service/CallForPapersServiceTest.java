@@ -2,7 +2,8 @@ package com.ensao.gi4.service;
 
 import com.ensao.gi4.dto.CallForPapersDto;
 import com.ensao.gi4.dto.CallForPapersRequestDto;
-import com.ensao.gi4.dto.mapper.Mapper;
+import com.ensao.gi4.dto.mapper.CallForPapersMapper;
+import com.ensao.gi4.dto.mapper.ConferenceMapper;
 import com.ensao.gi4.model.CallForPapers;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.model.Role;
@@ -41,7 +42,7 @@ public class CallForPapersServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		underTest = new CallForPapersServiceImpl(callForPapersRepository, conferenceService);
+		underTest = new CallForPapersServiceImpl(callForPapersRepository, conferenceService, CallForPapersMapper.INSTANCE);
 
 		// given
         conference = new Conference(
@@ -87,7 +88,7 @@ public class CallForPapersServiceTest {
         // Given
 		// when
 		when(conferenceService.findById(conference.getId()))
-                .thenReturn(Optional.of(Mapper.toConferenceDto(conference)));
+                .thenReturn(Optional.of(ConferenceMapper.INSTANCE.toConferenceDto(conference)));
 		when(callForPapersRepository.save(any())).thenReturn(callForPapers);
 
 		Optional<CallForPapersDto> optionalCFP = underTest.add(callForPapersRequestDto, conference.getId());

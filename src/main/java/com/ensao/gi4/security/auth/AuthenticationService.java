@@ -1,94 +1,69 @@
 package com.ensao.gi4.security.auth;
 
-import com.ensao.gi4.dto.UserDto;
-import com.ensao.gi4.dto.mapper.Mapper;
-import com.ensao.gi4.model.Role;
-import com.ensao.gi4.security.jwt.JwtService;
 import com.ensao.gi4.security.token.InvalidTokenException;
-import com.ensao.gi4.security.token.Token;
 import com.ensao.gi4.security.token.TokenService;
-import com.ensao.gi4.security.token.TokenType;
-import com.ensao.gi4.service.api.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
 
-    private final UserService userService;
-    private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
 
+    @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        var authenticationToken = new UsernamePasswordAuthenticationToken(request.email(), request.password());
-        authenticationManager.authenticate(authenticationToken);
-        UserDto userDto = fetchUserByEmail(request.email());
-        Map<String, Object> claims = getUserClaims(userDto.role());
-        var jwtToken = jwtService.generateAccessToken(claims, userDto.email());
-        var refreshToken = jwtService.generateRefreshToken(userDto.email());
-        saveUserTokens(userDto, jwtToken, refreshToken);
-        return AuthenticationResponse.builder()
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
-                .build();
+        Authentication authentication = authenticateUser(request.email(), request.password());
+        String username = authentication.getName();
+        Map<String, Object> claims = extractClaims(authentication);
+        String accessToken = tokenService.generateAccessToken(claims, username);
+        String refreshToken = tokenService.generateRefreshToken(claims, username);
+        tokenService.saveUserTokens(username, accessToken, refreshToken);
+        return buildAuthenticationResponse(accessToken, refreshToken);
     }
 
-    private UserDto fetchUserByEmail(String email) {
-        return userService.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+    private Authentication authenticateUser(String email, String password) {
+        var authenticationToken = new UsernamePasswordAuthenticationToken(email, password);
+        return authenticationManager.authenticate(authenticationToken);
     }
 
-    private static Map<String, Object> getUserClaims(Role role) {
-        List<Role> roles = Collections.singletonList(role);
+    @Transactional
+    public AuthenticationResponse refreshToken(RefreshTokenRequest request) {
+        if (!tokenService.isRefreshTokenValid(request.refreshToken())) {
+            throw new InvalidTokenException("Invalid refresh token");
+        }
+
+        String username = tokenService.extractSubject(request.refreshToken());
+        Map<String, Object> claims = tokenService.createUserClaims(username);
+        String newAccessToken = tokenService.generateAccessToken(claims, username);
+        String newRefreshToken = tokenService.generateRefreshToken(claims, username);
+        tokenService.saveUserTokens(username, newAccessToken, newRefreshToken);
+        return buildAuthenticationResponse(newAccessToken, newRefreshToken);
+    }
+
+    private Map<String, Object> extractClaims(Authentication authentication) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", roles);
+        var authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+        claims.put("roles", authorities);
+        claims.put("authenticated", authentication.isAuthenticated());
         return claims;
     }
 
-    private void saveUserToken(UserDto userDto, String jwtToken, TokenType tokenType) {
-        var token = Token.builder()
-                .user(Mapper.toUser(userDto))
-                .token(jwtToken)
-                .tokenType(tokenType)
-                .expired(false)
-                .revoked(false)
+    private AuthenticationResponse buildAuthenticationResponse(String accessToken, String refreshToken) {
+        return AuthenticationResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .build();
-        tokenService.save(token);
     }
-
-    public AuthenticationResponse refreshToken(RefreshTokenRequest request) {
-        String userEmail = jwtService.extractUsername(request.refreshToken());
-
-        if (userEmail != null) {
-            var user = fetchUserByEmail(userEmail);
-            if (jwtService.isRefreshTokenValid(request.refreshToken(), user.email())) {
-                var accessToken = jwtService.generateAccessToken(getUserClaims(user.role()), user.email());
-                var refreshTokenRotation = jwtService.generateRefreshToken(user.email());
-                saveUserTokens(user, accessToken, refreshTokenRotation);
-                return AuthenticationResponse.builder()
-                        .accessToken(accessToken)
-                        .refreshToken(refreshTokenRotation)
-                        .build();
-            }
-        }
-        throw new InvalidTokenException("Invalid refresh token");
-    }
-
-    private void saveUserTokens(UserDto userDto, String accessToken, String refreshToken) {
-        tokenService.revokeAllUserTokens(userDto.id());
-        saveUserToken(userDto, accessToken, TokenType.ACCESS);
-        saveUserToken(userDto, refreshToken, TokenType.REFRESH);
-    }
-
-
 }

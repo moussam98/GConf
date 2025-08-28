@@ -3,8 +3,7 @@ package com.ensao.gi4.service.impl;
 import com.ensao.gi4.dto.ConferenceDto;
 import com.ensao.gi4.dto.SubmissionDto;
 import com.ensao.gi4.dto.SubmissionRequestDto;
-import com.ensao.gi4.dto.mapper.Mapper;
-import com.ensao.gi4.model.Conference;
+import com.ensao.gi4.dto.mapper.SubmissionMapper;
 import com.ensao.gi4.model.Submission;
 import com.ensao.gi4.repository.SubmissionRepository;
 import com.ensao.gi4.service.api.AuthorsService;
@@ -32,6 +31,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 	private final DocumentService documentService;
 	private final AuthorsService authorService;
 	private final MessageSourceUtils messageSourceUtils;
+	private final SubmissionMapper submissionMapper;
 
 	@Override
 	public SubmissionDto createByConferenceId(Long conferenceId, SubmissionRequestDto submissionRequestDto){
@@ -44,15 +44,13 @@ public class SubmissionServiceImpl implements SubmissionService {
 	@Override
 	public Optional<SubmissionDto> findById(Long id) {
 		return submissionRepository.findSubmissionById(id)
-				.map(Mapper::toSubmissionDto);
+				.map(submissionMapper::toSubmissionDto);
 	}
 
 	@Override
 	public List<SubmissionDto> listByConferenceId(Long conferenceId) {
-		var conference= new Conference();
-		conference.setId(conferenceId);
-		return submissionRepository.findSubmissionsByConference(conference)
-				.stream().map(Mapper::toSubmissionDto).toList();
+		return submissionRepository.findSubmissionsByConferenceId(conferenceId)
+				.stream().map(submissionMapper::toSubmissionDto).toList();
 	}
 
 	@Override
@@ -79,7 +77,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 	private SubmissionDto saveSubmissionIfConferenceExists(ConferenceDto conferenceDto,
 														   SubmissionRequestDto submissionRequestDto){
 		try {
-			return Mapper.toSubmissionDto(saveSubmission(conferenceDto, submissionRequestDto));
+			return submissionMapper.toSubmissionDto(saveSubmission(conferenceDto, submissionRequestDto));
 		}catch (IOException e){
 			throw new IllegalStateException("Error while saving submission: " +  e.getMessage());
 		}
@@ -87,11 +85,8 @@ public class SubmissionServiceImpl implements SubmissionService {
 
 	private Submission saveSubmission(ConferenceDto conferenceDto, SubmissionRequestDto submissionRequestDto)
 			throws IOException {
-		Submission submission = Mapper.toSubmission(submissionRequestDto);
+		Submission submission = submissionMapper.toSubmission(submissionRequestDto, conferenceDto.id());
 		documentService.add(submission.getDocument());
-		Conference conference = new Conference();
-		conference.setId(conferenceDto.id());
-		submission.setConference(conference);
 		submission.getAuthors().forEach(author -> {
 			Instant instant = Instant.now();
 			author.setCreatedAt(instant);

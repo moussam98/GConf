@@ -3,14 +3,12 @@ package com.ensao.gi4.service.impl;
 import com.ensao.gi4.dto.ConferenceDto;
 import com.ensao.gi4.dto.ConferencePatchDto;
 import com.ensao.gi4.dto.ConferenceRequestDto;
-import com.ensao.gi4.dto.UserDto;
-import com.ensao.gi4.dto.mapper.Mapper;
+import com.ensao.gi4.dto.mapper.ConferenceMapper;
 import com.ensao.gi4.model.Conference;
 import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.ConferenceRepository;
 import com.ensao.gi4.service.api.ConferenceService;
 import com.ensao.gi4.service.api.UserService;
-import com.ensao.gi4.service.exception.UserNotFoundException;
 import com.ensao.gi4.utils.MessageSourceUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,6 +26,7 @@ public class ConferenceServiceImpl implements ConferenceService {
 	private final ConferenceRepository conferenceRepository;
     private final UserService userService;
 	private final MessageSourceUtils messageSourceUtils;
+	private final ConferenceMapper conferenceMapper;
 
 	@Override
 	public ConferenceDto add(ConferenceRequestDto conferenceRequestDto, Long userId) {
@@ -39,21 +38,18 @@ public class ConferenceServiceImpl implements ConferenceService {
 							new Object[]{conferenceRequestDto.name(), conferenceRequestDto.acronym()},
 							Locale.ENGLISH));
 		} else {
-            Conference conference = Mapper.toConference(conferenceRequestDto);
+            Conference conference = conferenceMapper.toConference(conferenceRequestDto, userService.getById(userId).id());
 			Instant instant = Instant.now();
 			conference.setCreatedAt(instant);
 			conference.setUpdatedAt(instant);
-			UserDto userDto = userService.findById(userId).orElseThrow(
-					() -> new UserNotFoundException(messageSourceUtils.getMessage("organizer.account.not_found")));
-			conference.setOwner(Mapper.toUser(userDto));
-			return Mapper.toConferenceDto(conferenceRepository.save(conference));
+			return conferenceMapper.toConferenceDto(conferenceRepository.save(conference));
 		}
 	}
 
 	@Override
 	public Optional<ConferenceDto> findById(Long id) {
 		return conferenceRepository.findConferenceById(id)
-				.map(Mapper::toConferenceDto);
+				.map(conferenceMapper::toConferenceDto);
 	}
 
 	@Override
@@ -62,7 +58,7 @@ public class ConferenceServiceImpl implements ConferenceService {
 				.map(existingConference -> {
 					updateConferenceFields(existingConference, conferencePatchDto);
 					Conference savedConference = conferenceRepository.save(existingConference);
-					return Mapper.toConferenceDto(savedConference);
+					return conferenceMapper.toConferenceDto(savedConference);
 				});
     }
 
@@ -97,7 +93,7 @@ public class ConferenceServiceImpl implements ConferenceService {
 		var owner = new User();
 		owner.setId(ownerId);
 		return conferenceRepository.findByOwner(owner)
-				.map(Mapper::toConferenceDto);
+				.map(conferenceMapper::toConferenceDto);
 	}
 
 }

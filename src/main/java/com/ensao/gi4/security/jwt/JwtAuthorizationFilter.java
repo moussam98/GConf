@@ -1,5 +1,6 @@
 package com.ensao.gi4.security.jwt;
 
+import com.ensao.gi4.security.token.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +24,7 @@ import java.util.Objects;
 public class JwtAuthorizationFilter extends OncePerRequestFilter {
 
     public static final String TOKEN_PREFIX = "Bearer ";
-    private final JwtService jwtService;
+    private final TokenService tokenService;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -39,7 +40,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
         }
 
         try {
-            final String username = jwtService.extractUsername(jwtToken);
+            final String username = tokenService.extractSubject(jwtToken);
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
                 authenticateUserIfTokenValid(request, jwtToken, userDetails);
@@ -60,7 +61,7 @@ public class JwtAuthorizationFilter extends OncePerRequestFilter {
     }
 
     private void authenticateUserIfTokenValid(HttpServletRequest request, String jwtToken, UserDetails userDetails) {
-        if (jwtService.isTokenValid(jwtToken, userDetails)) {
+        if (tokenService.isTokenValid(jwtToken, userDetails.getUsername())) {
             var authToken = new
                     UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
