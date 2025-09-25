@@ -30,7 +30,7 @@ public class SecurityConfiguration {
                  .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                          .requestMatchers("/api/v*/auth/**").permitAll()
                          .requestMatchers(HttpMethod.POST, "/api/v*/users").permitAll()
-                         .requestMatchers(HttpMethod.POST, "/api/v*/users/*/submissions").permitAll()
+                         .requestMatchers(HttpMethod.POST, "/api/v*/conferences/*/submissions").permitAll()
                          .requestMatchers("/api/v*/users/*/conferences").hasAuthority("ADMIN")
                          .requestMatchers("/api/v*/users/**").hasAuthority("ADMIN")
                          .requestMatchers("/api/v*/conferences/*/cfp/**").hasAuthority("ADMIN")

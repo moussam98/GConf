@@ -9,6 +9,7 @@ import com.ensao.gi4.model.User;
 import com.ensao.gi4.repository.UserRepository;
 import com.ensao.gi4.service.api.UserService;
 import com.ensao.gi4.service.exception.UserNotFoundException;
+import com.ensao.gi4.service.exception.UsernameAlreadyExistsException;
 import com.ensao.gi4.utils.MessageSourceUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -51,7 +52,7 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserDto create(UserRequestDto userRequestDto) {
 		if (userRepository.findByEmail(userRequestDto.email()).isPresent()){
-			throw new IllegalArgumentException(messageSourceUtils.getMessage("error.user.email.duplication",
+			throw new UsernameAlreadyExistsException(messageSourceUtils.getMessage("error.user.email.duplication",
 					new Object[]{userRequestDto.email()}));
 		}
 

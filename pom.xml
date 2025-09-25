@@ -159,12 +159,6 @@
 							<version>${lombok-mapstruct-binding.version}</version>
 						</path>
 					</annotationProcessorPaths>
-					<compilerArgs>
-						<!-- Configure MapStruct to use Spring component model -->
-						<arg>-Amapstruct.defaultComponentModel=spring</arg>
-						<!-- Optional: Other MapStruct options -->
-						<arg>-Amapstruct.unmappedTargetPolicy=IGNORE</arg>
-					</compilerArgs>
 				</configuration>
 			</plugin>
 

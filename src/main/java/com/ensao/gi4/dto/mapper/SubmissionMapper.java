@@ -21,6 +21,7 @@ public interface SubmissionMapper {
     @Mapping(target = "document.fileType", source = "submissionRequestDto.document.contentType")
     @Mapping(target = "document.sizeInBytes", source = "submissionRequestDto.document.size")
     @Mapping(target = "document.data", expression = "java(getDocumentBytes(multipartFile))")
+    @Mapping(target = "createdAt", expression = "java(LocalDate.now())")
     Submission toSubmission(SubmissionRequestDto submissionRequestDto, Long conferenceId);
     SubmissionDto toSubmissionDto(SubmissionProjection submissionProjection);
     SubmissionDto toSubmissionDto(Submission submission);

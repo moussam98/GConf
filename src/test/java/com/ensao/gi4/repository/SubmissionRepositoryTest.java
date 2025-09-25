@@ -85,6 +85,7 @@ public class SubmissionRepositoryTest {
                 null,
                 null,
                 null,
+				null,
 				null);
 
 	}
@@ -152,6 +153,52 @@ public class SubmissionRepositoryTest {
 		// then
 		assertThat(submissionOptional).isNotEmpty();
 		assertThat(submissionOptional).hasValue(submission);
+	}
+
+	@Test
+	void shouldComputeSubmissionStatistics() {
+		// given
+		var document1 = new Document();
+		document.setFilename("Test1.pdf");
+		document.setFileType(MediaType.APPLICATION_PDF_VALUE);
+		document.setData("Hello world".getBytes());
+		var document2 = new Document();
+		document.setFilename("Test2.pdf");
+		document.setFileType(MediaType.APPLICATION_PDF_VALUE);
+		document.setData("Hello world".getBytes());
+		conferenceRepository.save(conference);
+		authorRepository.saveAll(authors);
+		documentRepository.save(document1);
+		documentRepository.save(document2);
+
+		submission.setConference(conference);
+		submission.setAuthors(authors);
+		submission.setKeywords(keywords);
+		submission.setDocument(document1);
+		submission.setIsEvaluate(true);
+		submission.setIsValidate(true);
+		underTest.save(submission);
+
+		var sub2 = new Submission();
+		sub2.setConference(conference);
+		sub2.setAuthors(authors);
+		sub2.setKeywords(keywords);
+		sub2.setDocument(document2);
+		sub2.setIsEvaluate(true);
+		sub2.setIsValidate(false);
+		underTest.save(sub2);
+
+		// WHEN
+		var result = underTest.findSubmissionStatisticsByConferenceId(conference.getId());
+
+		// THEN
+		assertThat(result).isNotNull();
+		assertThat(result.totalSubmissions()).isEqualTo(2);
+		assertThat(result.pendingCount()).isEqualTo(0);
+		assertThat(result.acceptedCount()).isEqualTo(1);
+		assertThat(result.rejectedCount()).isEqualTo(1);
+
+
 	}
 
 }

@@ -1,12 +1,10 @@
 package com.ensao.gi4.controller;
 
-import com.ensao.gi4.dto.ConferenceDto;
-import com.ensao.gi4.dto.ConferencePatchDto;
-import com.ensao.gi4.dto.SubmissionDto;
-import com.ensao.gi4.dto.SubmissionRequestDto;
+import com.ensao.gi4.dto.*;
 import com.ensao.gi4.service.api.ConferenceService;
 import com.ensao.gi4.service.api.SubmissionService;
 import com.ensao.gi4.utils.MessageSourceUtils;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -46,10 +44,20 @@ record ConferenceController(ConferenceService conferenceService,
 		return ResponseEntity.ok(submissionService.listByConferenceId(conferenceId));
 	}
 
+	@GetMapping("/{conferenceId}/submissions/paginated")
+	public ResponseEntity<PageResponse<SubmissionDto>> getSubmissionsByConferenceId(@PathVariable Long conferenceId, Pageable pageable) {
+		return ResponseEntity.ok(PageResponse.fromPage(submissionService.listByConferenceId(conferenceId, pageable)));
+	}
+
 	@PostMapping(value = "/{conferenceId}/submissions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<SubmissionDto> addSubmission(@PathVariable Long conferenceId,
 													   @ModelAttribute SubmissionRequestDto submissionRequestDto){
 		return ResponseEntity.ok(submissionService.createByConferenceId(conferenceId, submissionRequestDto));
+	}
+
+	@GetMapping("/{conferenceId}/submissions/statistics")
+	public ResponseEntity<SubmissionStatisticsDto> getSubmissionStatisticsByConferenceId(@PathVariable Long conferenceId) {
+		return ResponseEntity.ok(submissionService.getSubmissionStatisticsByConferenceId(conferenceId));
 	}
 
 }

@@ -1,0 +1,2 @@
+ALTER TABLE submissions
+    ADD COLUMN created_at DATE DEFAULT CURRENT_DATE NOT NULL;

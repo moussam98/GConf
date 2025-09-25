@@ -1,5 +1,6 @@
 package com.ensao.gi4.dto;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -11,5 +12,6 @@ public record SubmissionDto(
         DocumentMetadataDto document,
         List<AuthorDto> authors,
         Boolean isEvaluate,
-        Boolean isValidate) {
+        Boolean isValidate,
+        LocalDate createdAt) {
 }

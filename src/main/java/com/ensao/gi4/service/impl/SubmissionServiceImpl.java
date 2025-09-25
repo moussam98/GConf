@@ -3,6 +3,7 @@ package com.ensao.gi4.service.impl;
 import com.ensao.gi4.dto.ConferenceDto;
 import com.ensao.gi4.dto.SubmissionDto;
 import com.ensao.gi4.dto.SubmissionRequestDto;
+import com.ensao.gi4.dto.SubmissionStatisticsDto;
 import com.ensao.gi4.dto.mapper.SubmissionMapper;
 import com.ensao.gi4.model.Submission;
 import com.ensao.gi4.repository.SubmissionRepository;
@@ -13,6 +14,8 @@ import com.ensao.gi4.service.api.SubmissionService;
 import com.ensao.gi4.service.exception.ConferenceNotFoundException;
 import com.ensao.gi4.utils.MessageSourceUtils;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,6 +54,14 @@ public class SubmissionServiceImpl implements SubmissionService {
 	public List<SubmissionDto> listByConferenceId(Long conferenceId) {
 		return submissionRepository.findSubmissionsByConferenceId(conferenceId)
 				.stream().map(submissionMapper::toSubmissionDto).toList();
+	}
+
+
+	@Override
+	public Page<SubmissionDto> listByConferenceId(Long conferenceId, Pageable pageable) {
+		return submissionRepository
+				.findSubmissionsByConferenceId(conferenceId, pageable)
+				.map(submissionMapper::toSubmissionDto);
 	}
 
 	@Override
@@ -97,5 +108,8 @@ public class SubmissionServiceImpl implements SubmissionService {
 		return submission;
 	}
 
-	
+	@Override
+	public SubmissionStatisticsDto getSubmissionStatisticsByConferenceId(Long conferenceId) {
+		return submissionRepository.findSubmissionStatisticsByConferenceId(conferenceId);
+	}
 }

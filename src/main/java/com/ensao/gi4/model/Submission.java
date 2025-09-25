@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,6 +36,7 @@ public class Submission {
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Author> authors; 
 	private Boolean isEvaluate = false; 
-	private Boolean isValidate = false; 
+	private Boolean isValidate = false;
+	private LocalDate createdAt;
 
 }

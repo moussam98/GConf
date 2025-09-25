@@ -1,5 +1,6 @@
 package com.ensao.gi4.advice;
 
+import com.ensao.gi4.service.exception.UsernameAlreadyExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,9 +25,17 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+    public ResponseEntity<Map<String, String>> handleUserDuplicationKeyException(RuntimeException ex) {
         Map<String, String> errors = new HashMap<>();
         errors.put("message", ex.getMessage());
-        return new ResponseEntity<>(errors, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(errors, getHttpStatus(ex));
     }
+    private HttpStatus getHttpStatus(RuntimeException exception){
+        if(exception instanceof UsernameAlreadyExistsException){
+            return HttpStatus.CONFLICT;
+        }else{
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+    }
+
 }
