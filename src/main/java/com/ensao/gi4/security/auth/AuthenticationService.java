@@ -6,12 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -24,9 +20,8 @@ public class AuthenticationService {
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         Authentication authentication = authenticateUser(request.email(), request.password());
         String username = authentication.getName();
-        Map<String, Object> claims = extractClaims(authentication);
-        String accessToken = tokenService.generateAccessToken(claims, username);
-        String refreshToken = tokenService.generateRefreshToken(claims, username);
+        String accessToken = tokenService.generateAccessToken(username);
+        String refreshToken = tokenService.generateRefreshToken(username);
         tokenService.saveUserTokens(username, accessToken, refreshToken);
         return buildAuthenticationResponse(accessToken, refreshToken);
     }
@@ -43,21 +38,10 @@ public class AuthenticationService {
         }
 
         String username = tokenService.extractSubject(request.refreshToken());
-        Map<String, Object> claims = tokenService.createUserClaims(username);
-        String newAccessToken = tokenService.generateAccessToken(claims, username);
-        String newRefreshToken = tokenService.generateRefreshToken(claims, username);
+        String newAccessToken = tokenService.generateAccessToken(username);
+        String newRefreshToken = tokenService.generateRefreshToken(username);
         tokenService.saveUserTokens(username, newAccessToken, newRefreshToken);
         return buildAuthenticationResponse(newAccessToken, newRefreshToken);
-    }
-
-    private Map<String, Object> extractClaims(Authentication authentication) {
-        Map<String, Object> claims = new HashMap<>();
-        var authorities = authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
-        claims.put("roles", authorities);
-        claims.put("authenticated", authentication.isAuthenticated());
-        return claims;
     }
 
     private AuthenticationResponse buildAuthenticationResponse(String accessToken, String refreshToken) {

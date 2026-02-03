@@ -1,12 +1,9 @@
 package com.ensao.gi4.security.token;
 
-import java.util.Map;
-
 public interface TokenService {
     // Token Generation
-    String generateAccessToken(Map<String, Object> extraClaims, String username);
-    String generateRefreshToken(Map<String, Object> extraClaims, String username);
-
+    String  generateAccessToken(String username);
+    String generateRefreshToken(String username);
 
     // Token Management
     void saveUserTokens(String subject, String accessToken, String refreshToken);
@@ -17,6 +14,4 @@ public interface TokenService {
 
     // Token Information Extraction
     String extractSubject(String token);
-    // Claims Management
-    Map<String, Object> createUserClaims(String subject);
 }

@@ -1,4 +1,4 @@
-package com.ensao.gi4.security.jwt;
+package com.ensao.gi4.security.filter;
 
 import com.ensao.gi4.security.token.TokenService;
 import jakarta.servlet.FilterChain;

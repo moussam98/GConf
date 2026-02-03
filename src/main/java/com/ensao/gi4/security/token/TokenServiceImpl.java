@@ -4,36 +4,79 @@ import com.ensao.gi4.dto.UserDto;
 import com.ensao.gi4.dto.mapper.UserMapper;
 import com.ensao.gi4.security.jwt.JwtService;
 import com.ensao.gi4.service.api.UserService;
-import lombok.RequiredArgsConstructor;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
-public class TokenServiceImpl implements TokenService {
+class TokenServiceImpl implements TokenService, InitializingBean, DisposableBean {
+
+    private static final Log LOGGING = LogFactory.getLog(TokenServiceImpl.class);
+    private static final String CLEANUP_EXPIRED_TOKENS_CRON_EXPRESSION = "@hourly";
 
     private final JwtService jwtService;
     private final TokenRepository tokenRepository;
     private final UserService userService;
     private final UserMapper userMapper;
+    private final ThreadPoolTaskScheduler taskScheduler;
 
-    @Override
-    public String generateAccessToken(Map<String, Object> claims, String username) {
-        return jwtService.generateAccessToken(claims, username);
+
+    public TokenServiceImpl(JwtService jwtService, TokenRepository tokenRepository, UserService
+            userService, UserMapper userMapper) {
+        this.jwtService = jwtService;
+        this.tokenRepository = tokenRepository;
+        this.userService = userService;
+        this.userMapper = userMapper;
+        this.taskScheduler = createThreadPoolTaskScheduler();
+    }
+
+    private ThreadPoolTaskScheduler createThreadPoolTaskScheduler() {
+        var scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setThreadNamePrefix("Gconf-tokens-");
+        scheduler.initialize();
+        scheduler.schedule(this::cleanUpExpiredTokens,
+                new CronTrigger(CLEANUP_EXPIRED_TOKENS_CRON_EXPRESSION));
+        return scheduler;
+    }
+
+    private void cleanUpExpiredTokens() {
+        int deletedCount = tokenRepository.cleanUpExpiredToken(Instant.now());
+        if (LOGGING.isDebugEnabled()) {
+            LOGGING.debug(String.format("Cleaned up %d expired tokens", deletedCount));
+        }
     }
 
     @Override
-    public String generateRefreshToken(Map<String, Object> extraClaims, String username) {
-        return jwtService.generateRefreshToken(extraClaims ,username);
+    public void destroy() {
+        taskScheduler.destroy();
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        taskScheduler.afterPropertiesSet();
+    }
+
+    @Override
+    public String generateAccessToken(String username) {
+        return jwtService.generateAccessToken(createUserClaims(username), username);
+    }
+
+    @Override
+    public String generateRefreshToken(String username) {
+        return jwtService.generateRefreshToken(createUserClaims(username) ,username);
     }
 
 
-
-    @Override
-    public Map<String, Object> createUserClaims(String subject) {
+    private Map<String, Object> createUserClaims(String subject) {
         var user = userService.getByEmail(subject);
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", List.of(user.role().name()));
@@ -44,30 +87,27 @@ public class TokenServiceImpl implements TokenService {
     public void saveUserTokens(String subject, String accessToken, String refreshToken) {
         var userDto = userService.getByEmail(subject);
         revokeAllUserTokens(userDto.id());
-        saveToken(userDto, accessToken, TokenType.ACCESS);
-        saveToken(userDto, refreshToken, TokenType.REFRESH);
+        saveToken(userDto, accessToken, TokenType.ACCESS, jwtService.jwtProperties().getTokenExpirationInMilliseconds());
+        saveToken(userDto, refreshToken, TokenType.REFRESH, jwtService.jwtProperties().getTokenExpirationInMilliseconds());
     }
 
-    private void saveToken(UserDto userDto, String jwtToken, TokenType tokenType) {
+    private void saveToken(UserDto userDto, String jwtToken, TokenType tokenType, long tokenExpiration) {
         var token = Token.builder()
                 .user(userMapper.toUser(userDto))
-                .token(jwtToken)
+                .tokenValue(jwtToken)
                 .tokenType(tokenType)
-                .expired(false)
+                .expiredAt(Instant.now().plusMillis(tokenExpiration))
                 .revoked(false)
                 .build();
         tokenRepository.save(token);
     }
 
     private void revokeAllUserTokens(Long userId) {
-        var validUserTokens = tokenRepository.findAllValidTokenByUser(userId);
+        var validUserTokens = tokenRepository.findAllValidTokenByUser(userId, Instant.now());
         if (validUserTokens.isEmpty()) {
             return;
         }
-        validUserTokens.forEach(token -> {
-            token.setExpired(true);
-            token.setRevoked(true);
-        });
+        validUserTokens.forEach(token -> token.setRevoked(true));
         tokenRepository.saveAll(validUserTokens);
     }
 
@@ -80,7 +120,7 @@ public class TokenServiceImpl implements TokenService {
     }
 
     private boolean isNotRevoked(String token) {
-        return !tokenRepository.findByToken(token).map(Token::isRevoked).orElseThrow(()
+        return !tokenRepository.findByTokenValue(token).map(Token::isRevoked).orElseThrow(()
                 -> new InvalidTokenException("Invalid token"));
     }
 

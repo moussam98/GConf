@@ -1,6 +1,6 @@
 package com.ensao.gi4.security.config;
 
-import com.ensao.gi4.security.jwt.JwtAuthorizationFilter;
+import com.ensao.gi4.security.filter.JwtAuthorizationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,27 +22,31 @@ public class SecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-         http
-                 .cors(Customizer.withDefaults())
-                 .csrf(CsrfConfigurer::disable)
-                 .sessionManagement(session ->
-                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                         .requestMatchers("/api/v*/auth/**").permitAll()
-                         .requestMatchers(HttpMethod.POST, "/api/v*/users").permitAll()
-                         .requestMatchers(HttpMethod.POST, "/api/v*/conferences/*/submissions").permitAll()
-                         .requestMatchers("/api/v*/users/*/conferences").hasAuthority("ADMIN")
-                         .requestMatchers("/api/v*/users/**").hasAuthority("ADMIN")
-                         .requestMatchers("/api/v*/conferences/*/cfp/**").hasAuthority("ADMIN")
-                         .requestMatchers("/api/v*/conferences/**").hasAuthority("ADMIN")
-                         .requestMatchers("/api/v*/submissions/**").hasAuthority("ADMIN")
-                         .requestMatchers("/api/v*/documents/**").hasAuthority("ADMIN")
-                         .anyRequest().authenticated()
-                 )
-                 .addFilterAfter(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        http
+                .cors(Customizer.withDefaults())
+                .csrf(CsrfConfigurer::disable)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(authorizeRequests -> authorizeRequests
+                                .requestMatchers("/api/v*/auth/**").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/v*/users").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/v*/conferences/*/submissions").permitAll()
+                                .requestMatchers("/ott/generate", "/ott/login").permitAll()
+                                .requestMatchers("/api/v*/users/*/conferences").hasAuthority("ADMIN")
+                                .requestMatchers("/api/v*/users/**").hasAuthority("ADMIN")
+                                .requestMatchers("/api/v*/conferences/*/cfp/**").hasAuthority("ADMIN")
+                                .requestMatchers("/api/v*/conferences/**").hasAuthority("ADMIN")
+                                .requestMatchers("/api/v*/submissions/**").hasAuthority("ADMIN")
+                                .requestMatchers("/api/v*/documents/**").hasAuthority("ADMIN")
+                                .anyRequest().authenticated()
+                )
+                .addFilterAfter(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
 
         return http.build();
     }
+
+
 
 
 }

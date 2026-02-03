@@ -7,27 +7,30 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "tokens")
-public class Token {
+class Token {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public Integer id;
+    private Integer id;
 
     @Column(unique = true)
-    public String token;
+    private String tokenValue;
 
     @Enumerated(EnumType.STRING)
-    public TokenType tokenType;
+    private TokenType tokenType;
 
-    public boolean revoked;
+    private boolean revoked;
 
-    public boolean expired;
+    private Instant expiredAt;
+
 
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "user_id")

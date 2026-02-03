@@ -1,5 +1,7 @@
 package com.ensao.gi4.advice;
 
+import com.ensao.gi4.security.token.InvalidTokenException;
+import com.ensao.gi4.service.exception.UserNotFoundException;
 import com.ensao.gi4.service.exception.UsernameAlreadyExistsException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,11 +33,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errors, getHttpStatus(ex));
     }
     private HttpStatus getHttpStatus(RuntimeException exception){
-        if(exception instanceof UsernameAlreadyExistsException){
-            return HttpStatus.CONFLICT;
-        }else{
-            return HttpStatus.INTERNAL_SERVER_ERROR;
-        }
+        return switch (exception){
+            case UsernameAlreadyExistsException ignored -> HttpStatus.CONFLICT;
+            case UserNotFoundException ignored -> HttpStatus.BAD_REQUEST;
+            case InvalidTokenException ignored -> HttpStatus.UNAUTHORIZED;
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+        };
     }
 
 }
